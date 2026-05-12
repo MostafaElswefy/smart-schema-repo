@@ -1,12 +1,12 @@
 {
   "schema": "work",
   "env": "dev",
-  "version": "1.0.0",
-  "generated_at": "2026-05-12T15:49:00.219667",
+  "version": "1.0.1",
+  "generated_at": "2026-05-12T16:16:20.844498",
   "files": [
     "01_pre_data.sql",
     "02_data.sql",
     "03_post_data.sql"
   ],
-  "hash": "8765444451054027691478694627"
+  "hash": "121877970244687370646530455"
 }
