@@ -1,12 +1,18 @@
 {
   "schema": "work",
-  "env": "dev",
-  "version": "1.0.1",
-  "generated_at": "2026-05-12T16:16:20.844498",
+  "environment": "dev",
+  "snapshot": "current",
+  "generated_at": "2026-05-12T16:35:17.879291",
+  "postgres_version": "17.6",
+  "supabase_cli_version": "2.98.2",
+  "table_count": 14,
+  "function_count": 0,
+  "trigger_count": 0,
+  "policy_count": 0,
   "files": [
     "01_pre_data.sql",
     "02_data.sql",
     "03_post_data.sql"
   ],
-  "hash": "121877970244687370646530455"
+  "hash": "599855774237964238692888296"
 }

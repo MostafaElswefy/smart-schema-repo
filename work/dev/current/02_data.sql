@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict gMXWUH6b5OVRWJ6z0cWTRkKNNnQh6I1F1Z7uHkZuSosRh5vQHgA5xwYkjtt3mEH
+\restrict 3yYB0a7jRAncwDt1NMb6p3CDIWJYK72E89i0MeaIJwFplCyCXDSJl9m4M5LwM7l
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 18.3
@@ -135,5 +135,5 @@ COPY work.work_visibility (id, contract_id, viewer_entity_id, visible_entity_id,
 -- PostgreSQL database dump complete
 --
 
-\unrestrict gMXWUH6b5OVRWJ6z0cWTRkKNNnQh6I1F1Z7uHkZuSosRh5vQHgA5xwYkjtt3mEH
+\unrestrict 3yYB0a7jRAncwDt1NMb6p3CDIWJYK72E89i0MeaIJwFplCyCXDSJl9m4M5LwM7l
 
