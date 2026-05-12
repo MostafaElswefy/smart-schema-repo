@@ -2,17 +2,22 @@
   "schema": "work",
   "environment": "dev",
   "snapshot": "current",
-  "generated_at": "2026-05-12T16:35:17.879291",
+  "generated_at": "2026-05-12T16:53:24.670503",
   "postgres_version": "17.6",
   "supabase_cli_version": "2.98.2",
-  "table_count": 14,
+  "table_count": 0,
   "function_count": 0,
   "trigger_count": 0,
   "policy_count": 0,
   "files": [
-    "01_pre_data.sql",
-    "02_data.sql",
-    "03_post_data.sql"
+    "01_enums.sql",
+    "02_tables.sql",
+    "03_indexes.sql",
+    "04_functions.sql",
+    "05_triggers.sql",
+    "06_policies.sql",
+    "07_views.sql",
+    "08_seeds.sql"
   ],
-  "hash": "599855774237964238692888296"
+  "hash": "62063619275235520"
 }
