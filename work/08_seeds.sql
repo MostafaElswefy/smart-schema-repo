@@ -4,7 +4,7 @@ SET session_replication_role = replica;
 -- PostgreSQL database dump
 --
 
--- \restrict kjOy3pVOfOQruZo5fG2wxWgaJTojOwfxWfKPNsmUrXfKTESOU984orscqkJg0ec
+-- \restrict XALprzgLbQV96o25wtwHZnXZwG1cB1vvQSF4j5IFY8ViUycuo0OsPrtWk389m3A
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.6
@@ -232,6 +232,6 @@ INSERT INTO "work"."state_transition_rules" ("id", "entity_type", "from_state", 
 -- PostgreSQL database dump complete
 --
 
--- \unrestrict kjOy3pVOfOQruZo5fG2wxWgaJTojOwfxWfKPNsmUrXfKTESOU984orscqkJg0ec
+-- \unrestrict XALprzgLbQV96o25wtwHZnXZwG1cB1vvQSF4j5IFY8ViUycuo0OsPrtWk389m3A
 
 RESET ALL;
