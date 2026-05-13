@@ -1,0 +1,23 @@
+{
+  "schema": "ecosystem",
+  "environment": "dev",
+  "version": "1.0.0",
+  "snapshot": "current",
+  "generated_at": "2026-05-13T17:12:29.709723",
+  "postgres_version": "17.6",
+  "supabase_cli_version": "2.98.2",
+  "enums_count": 13,
+  "table_count": 0,
+  "indexes_count": 15,
+  "function_count": 0,
+  "trigger_count": 0,
+  "policy_count": 0,
+  "views_count": 0,
+  "seeds_count": 0,
+  "files": [
+    "00_full_schema.sql",
+    "02_tables.sql",
+    "03_indexes.sql"
+  ],
+  "hash": "410653520155227067567320874"
+}
