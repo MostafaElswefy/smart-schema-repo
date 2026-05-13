@@ -1,27 +1,327 @@
 [
   {
-    "object_type": "COLUMN COMMENT",
+    "object_type": "ENUM",
     "schema_name": "work",
-    "object_name": "work_financial_routes.beneficiary_type",
-    "definition": "COMMENT ON COLUMN work.work_financial_routes.beneficiary_type IS 'Determines who receives the money: \"payer\", \"payee\", \"both\", \"platform\".';"
+    "object_name": "action_type",
+    "definition": "CREATE TYPE work.action_type AS ENUM ('create', 'update', 'status_change', 'approve', 'reject', 'assign', 'transfer_ownership', 'add_participant', 'remove_participant', 'milestone_complete', 'payment_initiated');"
   },
   {
-    "object_type": "COMMENT",
+    "object_type": "ENUM",
     "schema_name": "work",
-    "object_name": "idx_contract_participants_lookup",
-    "definition": "COMMENT ON TABLE work.idx_contract_participants_lookup IS 'Accelerates role resolution for permission checks (active participants only).';"
+    "object_name": "approval_status",
+    "definition": "CREATE TYPE work.approval_status AS ENUM ('pending', 'approved', 'rejected');"
   },
   {
-    "object_type": "COMMENT",
+    "object_type": "ENUM",
     "schema_name": "work",
-    "object_name": "idx_contract_permissions_entity",
-    "definition": "COMMENT ON TABLE work.idx_contract_permissions_entity IS 'Used by check_contract_permission for direct RBAC lookups.';"
+    "object_name": "approval_type",
+    "definition": "CREATE TYPE work.approval_type AS ENUM ('signature', 'funding', 'release', 'change', 'termination');"
   },
   {
-    "object_type": "COMMENT",
+    "object_type": "ENUM",
+    "schema_name": "work",
+    "object_name": "beneficiary_type",
+    "definition": "CREATE TYPE work.beneficiary_type AS ENUM ('payer', 'payee', 'both', 'platform');"
+  },
+  {
+    "object_type": "ENUM",
+    "schema_name": "work",
+    "object_name": "contract_status",
+    "definition": "CREATE TYPE work.contract_status AS ENUM ('draft', 'active', 'paused', 'completed', 'cancelled', 'pending_approval', 'rejected', 'expired', 'disputed', 'archived');"
+  },
+  {
+    "object_type": "ENUM",
+    "schema_name": "work",
+    "object_name": "contract_visibility_mode",
+    "definition": "CREATE TYPE work.contract_visibility_mode AS ENUM ('internal', 'external', 'client_only');"
+  },
+  {
+    "object_type": "ENUM",
+    "schema_name": "work",
+    "object_name": "dispute_status",
+    "definition": "CREATE TYPE work.dispute_status AS ENUM ('open', 'under_investigation', 'mediation', 'arbitration', 'resolved', 'rejected', 'escalated');"
+  },
+  {
+    "object_type": "ENUM",
+    "schema_name": "work",
+    "object_name": "dispute_type",
+    "definition": "CREATE TYPE work.dispute_type AS ENUM ('payment', 'delay', 'quality', 'scope_creep', 'termination', 'compliance', 'other');"
+  },
+  {
+    "object_type": "ENUM",
+    "schema_name": "work",
+    "object_name": "entity_type_enum",
+    "definition": "CREATE TYPE work.entity_type_enum AS ENUM ('contract', 'milestone', 'execution_unit', 'approval');"
+  },
+  {
+    "object_type": "ENUM",
+    "schema_name": "work",
+    "object_name": "event_type",
+    "definition": "CREATE TYPE work.event_type AS ENUM ('create', 'update', 'status_change', 'delete', 'assign', 'approve', 'reject', 'transfer_ownership', 'add_participant', 'remove_participant', 'milestone_complete', 'payment_initiated', 'pause', 'resume');"
+  },
+  {
+    "object_type": "ENUM",
+    "schema_name": "work",
+    "object_name": "execution_unit_status",
+    "definition": "CREATE TYPE work.execution_unit_status AS ENUM ('pending', 'in_progress', 'completed', 'cancelled');"
+  },
+  {
+    "object_type": "ENUM",
+    "schema_name": "work",
+    "object_name": "link_type",
+    "definition": "CREATE TYPE work.link_type AS ENUM ('subcontract', 'amendment', 'supersedes', 'references');"
+  },
+  {
+    "object_type": "ENUM",
+    "schema_name": "work",
+    "object_name": "message_type",
+    "definition": "CREATE TYPE work.message_type AS ENUM ('text', 'image', 'voice', 'system', 'approval', 'payment', 'milestone');"
+  },
+  {
+    "object_type": "ENUM",
+    "schema_name": "work",
+    "object_name": "milestone_status",
+    "definition": "CREATE TYPE work.milestone_status AS ENUM ('pending', 'in_progress', 'completed', 'cancelled');"
+  },
+  {
+    "object_type": "ENUM",
+    "schema_name": "work",
+    "object_name": "participant_function",
+    "definition": "CREATE TYPE work.participant_function AS ENUM ('signatory', 'financial_manager', 'execution_manager', 'legal_representative', 'observer');"
+  },
+  {
+    "object_type": "ENUM",
+    "schema_name": "work",
+    "object_name": "participant_role",
+    "definition": "CREATE TYPE work.participant_role AS ENUM ('client', 'prime_contractor', 'subcontractor', 'assignee', 'auditor', 'other');"
+  },
+  {
+    "object_type": "ENUM",
+    "schema_name": "work",
+    "object_name": "participant_status",
+    "definition": "CREATE TYPE work.participant_status AS ENUM ('active', 'left', 'removed');"
+  },
+  {
+    "object_type": "ENUM",
+    "schema_name": "work",
+    "object_name": "participation_mode",
+    "definition": "CREATE TYPE work.participation_mode AS ENUM ('direct', 'indirect', 'nominal');"
+  },
+  {
+    "object_type": "ENUM",
+    "schema_name": "work",
+    "object_name": "permission_type",
+    "definition": "CREATE TYPE work.permission_type AS ENUM ('view', 'edit', 'approve', 'fund', 'release', 'manage');"
+  },
+  {
+    "object_type": "ENUM",
+    "schema_name": "work",
+    "object_name": "transfer_scope",
+    "definition": "CREATE TYPE work.transfer_scope AS ENUM ('full', 'partial');"
+  },
+  {
+    "object_type": "ENUM",
+    "schema_name": "work",
+    "object_name": "transfer_type",
+    "definition": "CREATE TYPE work.transfer_type AS ENUM ('full', 'partial', 'temporary', 'permanent');"
+  },
+  {
+    "object_type": "ENUM",
+    "schema_name": "work",
+    "object_name": "unit_type",
+    "definition": "CREATE TYPE work.unit_type AS ENUM ('phase', 'deliverable', 'task', 'subtask', 'milestone');"
+  },
+  {
+    "object_type": "ENUM",
+    "schema_name": "work",
+    "object_name": "visibility_scope",
+    "definition": "CREATE TYPE work.visibility_scope AS ENUM ('internal', 'external', 'client_only');"
+  },
+  {
+    "object_type": "ENUM",
+    "schema_name": "work",
+    "object_name": "visibility_type",
+    "definition": "CREATE TYPE work.visibility_type AS ENUM ('full', 'financial_only', 'timeline_only', 'restricted');"
+  },
+  {
+    "object_type": "TABLE",
+    "schema_name": "work",
+    "object_name": "approval_step_assignees",
+    "definition": "CREATE TABLE work.approval_step_assignees (\\n    id uuid NOT NULL,\\n    workflow_step_id uuid NOT NULL,\\n    entity_id uuid NOT NULL,\\n    role_in_step text,\\n    weight integer,\\n    created_at timestamp with time zone\\n);"
+  },
+  {
+    "object_type": "TABLE",
+    "schema_name": "work",
+    "object_name": "approval_workflow_steps",
+    "definition": "CREATE TABLE work.approval_workflow_steps (\\n    id uuid NOT NULL,\\n    workflow_template_id uuid NOT NULL,\\n    step_order integer NOT NULL,\\n    name text NOT NULL,\\n    description text,\\n    step_type text NOT NULL,\\n    condition jsonb,\\n    quorum_count integer,\\n    completion_policy text,\\n    timeout_hours integer,\\n    is_mandatory boolean,\\n    metadata jsonb,\\n    created_at timestamp with time zone\\n);"
+  },
+  {
+    "object_type": "TABLE",
+    "schema_name": "work",
+    "object_name": "approval_workflow_templates",
+    "definition": "CREATE TABLE work.approval_workflow_templates (\\n    id uuid NOT NULL,\\n    name text NOT NULL,\\n    description text,\\n    target_type text NOT NULL,\\n    applicable_approval_types ARRAY,\\n    is_default boolean,\\n    metadata jsonb,\\n    created_at timestamp with time zone\\n);"
+  },
+  {
+    "object_type": "TABLE",
+    "schema_name": "work",
+    "object_name": "contract_approval_workflows",
+    "definition": "CREATE TABLE work.contract_approval_workflows (\\n    id uuid NOT NULL,\\n    contract_id uuid NOT NULL,\\n    workflow_template_id uuid NOT NULL,\\n    status text,\\n    current_step_index integer,\\n    started_at timestamp with time zone,\\n    completed_at timestamp with time zone,\\n    metadata jsonb\\n);"
+  },
+  {
+    "object_type": "TABLE",
+    "schema_name": "work",
+    "object_name": "contract_approvals",
+    "definition": "CREATE TABLE work.contract_approvals (\\n    id uuid NOT NULL,\\n    contract_id uuid NOT NULL,\\n    requested_by_entity_id uuid NOT NULL,\\n    requested_from_entity_id uuid NOT NULL,\\n    approval_type USER-DEFINED NOT NULL,\\n    status USER-DEFINED NOT NULL,\\n    approved_at timestamp with time zone,\\n    rejected_at timestamp with time zone,\\n    metadata jsonb,\\n    created_at timestamp with time zone,\\n    updated_at timestamp with time zone NOT NULL,\\n    workflow_id uuid,\\n    workflow_step_id uuid,\\n    step_order integer,\\n    approval_snapshot jsonb,\\n    step_name text,\\n    step_order_snapshot integer\\n);"
+  },
+  {
+    "object_type": "TABLE",
+    "schema_name": "work",
+    "object_name": "contract_links",
+    "definition": "CREATE TABLE work.contract_links (\\n    id uuid NOT NULL,\\n    parent_contract_id uuid NOT NULL,\\n    child_contract_id uuid NOT NULL,\\n    link_type USER-DEFINED NOT NULL,\\n    metadata jsonb,\\n    created_at timestamp with time zone\\n);"
+  },
+  {
+    "object_type": "TABLE",
+    "schema_name": "work",
+    "object_name": "contract_messages",
+    "definition": "CREATE TABLE work.contract_messages (\\n    id uuid NOT NULL,\\n    contract_id uuid NOT NULL,\\n    sender_entity_id uuid NOT NULL,\\n    message_type USER-DEFINED NOT NULL,\\n    body text,\\n    metadata jsonb,\\n    created_at timestamp with time zone\\n);"
+  },
+  {
+    "object_type": "TABLE",
+    "schema_name": "work",
+    "object_name": "contract_ownership_history",
+    "definition": "CREATE TABLE work.contract_ownership_history (\\n    id uuid NOT NULL,\\n    contract_id uuid NOT NULL,\\n    owner_entity_id uuid NOT NULL,\\n    transfer_id uuid,\\n    started_at timestamp with time zone NOT NULL,\\n    ended_at timestamp with time zone,\\n    created_at timestamp with time zone,\\n    updated_at timestamp with time zone\\n);"
+  },
+  {
+    "object_type": "TABLE",
+    "schema_name": "work",
+    "object_name": "contract_participants",
+    "definition": "CREATE TABLE work.contract_participants (\\n    id uuid NOT NULL,\\n    contract_id uuid NOT NULL,\\n    entity_id uuid NOT NULL,\\n    role USER-DEFINED NOT NULL,\\n    participation_mode USER-DEFINED NOT NULL,\\n    visibility_scope USER-DEFINED NOT NULL,\\n    financial_role USER-DEFINED,\\n    execution_role USER-DEFINED,\\n    parent_participant_id uuid,\\n    allocation_percent numeric,\\n    status USER-DEFINED NOT NULL,\\n    joined_at timestamp with time zone NOT NULL,\\n    left_at timestamp with time zone,\\n    metadata jsonb,\\n    created_at timestamp with time zone NOT NULL,\\n    updated_at timestamp with time zone NOT NULL\\n);"
+  },
+  {
+    "object_type": "TABLE",
+    "schema_name": "work",
+    "object_name": "contract_permissions",
+    "definition": "CREATE TABLE work.contract_permissions (\\n    id uuid NOT NULL,\\n    contract_id uuid NOT NULL,\\n    entity_id uuid NOT NULL,\\n    permission USER-DEFINED NOT NULL,\\n    granted_by_entity_id uuid,\\n    created_at timestamp with time zone\\n);"
+  },
+  {
+    "object_type": "TABLE",
+    "schema_name": "work",
+    "object_name": "contracts",
+    "definition": "CREATE TABLE work.contracts (\\n    id uuid NOT NULL,\\n    project_id uuid,\\n    task_id uuid,\\n    title text NOT NULL,\\n    description text,\\n    status USER-DEFINED NOT NULL,\\n    asset_code text NOT NULL,\\n    total_amount numeric NOT NULL,\\n    current_version_no integer NOT NULL,\\n    created_by_entity_id uuid NOT NULL,\\n    owned_by_entity_id uuid NOT NULL,\\n    visibility_mode USER-DEFINED NOT NULL,\\n    started_at timestamp with time zone,\\n    completed_at timestamp with time zone,\\n    cancelled_at timestamp with time zone,\\n    metadata jsonb,\\n    created_at timestamp with time zone NOT NULL,\\n    updated_at timestamp with time zone NOT NULL,\\n    search_vector tsvector,\\n    has_open_dispute boolean\\n);"
+  },
+  {
+    "object_type": "TABLE",
+    "schema_name": "work",
+    "object_name": "dispute_cases",
+    "definition": "CREATE TABLE work.dispute_cases (\\n    id uuid NOT NULL,\\n    contract_id uuid NOT NULL,\\n    execution_unit_id uuid,\\n    approval_id uuid,\\n    dispute_type USER-DEFINED NOT NULL,\\n    status USER-DEFINED,\\n    raised_by_entity_id uuid NOT NULL,\\n    against_entity_id uuid NOT NULL,\\n    raised_at timestamp with time zone,\\n    title text NOT NULL,\\n    description text,\\n    claimed_amount numeric,\\n    requested_action text,\\n    resolved_at timestamp with time zone,\\n    resolution_summary text,\\n    resolved_by_entity_id uuid,\\n    metadata jsonb,\\n    created_at timestamp with time zone,\\n    updated_at timestamp with time zone\\n);"
+  },
+  {
+    "object_type": "TABLE",
+    "schema_name": "work",
+    "object_name": "dispute_evidence",
+    "definition": "CREATE TABLE work.dispute_evidence (\\n    id uuid NOT NULL,\\n    dispute_id uuid NOT NULL,\\n    submitted_by_entity_id uuid NOT NULL,\\n    evidence_type text NOT NULL,\\n    title text NOT NULL,\\n    description text,\\n    file_url text,\\n    content_hash text,\\n    metadata jsonb,\\n    submitted_at timestamp with time zone\\n);"
+  },
+  {
+    "object_type": "TABLE",
+    "schema_name": "work",
+    "object_name": "dispute_hearings",
+    "definition": "CREATE TABLE work.dispute_hearings (\\n    id uuid NOT NULL,\\n    dispute_id uuid NOT NULL,\\n    hearing_date timestamp with time zone NOT NULL,\\n    location text,\\n    is_online boolean,\\n    meeting_link text,\\n    decision text,\\n    notes text,\\n    created_at timestamp with time zone\\n);"
+  },
+  {
+    "object_type": "TABLE",
+    "schema_name": "work",
+    "object_name": "dispute_resolution_actions",
+    "definition": "CREATE TABLE work.dispute_resolution_actions (\\n    id uuid NOT NULL,\\n    dispute_id uuid NOT NULL,\\n    action_type text NOT NULL,\\n    description text,\\n    applied boolean,\\n    applied_at timestamp with time zone,\\n    metadata jsonb\\n);"
+  },
+  {
+    "object_type": "TABLE",
+    "schema_name": "work",
+    "object_name": "event_outbox",
+    "definition": "CREATE TABLE work.event_outbox (\\n    id uuid NOT NULL,\\n    event_type text NOT NULL,\\n    entity_type text NOT NULL,\\n    entity_id uuid NOT NULL,\\n    payload jsonb NOT NULL,\\n    status text NOT NULL,\\n    retry_count integer,\\n    last_error text,\\n    created_at timestamp with time zone,\\n    processed_at timestamp with time zone,\\n    routing_key text,\\n    target_services ARRAY,\\n    idempotency_key uuid,\\n    event_version integer,\\n    processed_by text,\\n    locked_until timestamp with time zone\\n);"
+  },
+  {
+    "object_type": "TABLE",
+    "schema_name": "work",
+    "object_name": "event_outbox_processed",
+    "definition": "CREATE TABLE work.event_outbox_processed (\\n    idempotency_key uuid NOT NULL,\\n    event_type text NOT NULL,\\n    entity_type text NOT NULL,\\n    entity_id uuid NOT NULL,\\n    service_name text NOT NULL,\\n    processed_at timestamp with time zone,\\n    result text,\\n    metadata jsonb\\n);"
+  },
+  {
+    "object_type": "TABLE",
+    "schema_name": "work",
+    "object_name": "execution_logs",
+    "definition": "CREATE TABLE work.execution_logs (\\n    id uuid NOT NULL,\\n    contract_id uuid,\\n    performed_by_entity_id uuid NOT NULL,\\n    event_type USER-DEFINED NOT NULL,\\n    created_at timestamp with time zone,\\n    target_entity_type text NOT NULL,\\n    target_entity_id uuid NOT NULL,\\n    old_state jsonb,\\n    new_state jsonb,\\n    idempotency_key uuid\\n);"
+  },
+  {
+    "object_type": "TABLE",
     "schema_name": "work",
     "object_name": "permission_evaluation_log",
-    "definition": "COMMENT ON TABLE work.permission_evaluation_log IS 'Audit log for permission evaluation to resolve ambiguity between direct entity and role-based policies.';"
+    "definition": "CREATE TABLE work.permission_evaluation_log (\\n    id uuid NOT NULL,\\n    entity_id uuid NOT NULL,\\n    contract_id uuid NOT NULL,\\n    permission USER-DEFINED NOT NULL,\\n    evaluated_at timestamp with time zone,\\n    result boolean NOT NULL,\\n    matched_policy_ids ARRAY,\\n    matched_rule_type text,\\n    applied_policy_id uuid,\\n    priority_applied integer,\\n    evaluation_details jsonb,\\n    triggered_by_setting text\\n);"
+  },
+  {
+    "object_type": "TABLE",
+    "schema_name": "work",
+    "object_name": "permission_policies",
+    "definition": "CREATE TABLE work.permission_policies (\\n    id uuid NOT NULL,\\n    name text NOT NULL,\\n    description text,\\n    permission_type USER-DEFINED NOT NULL,\\n    priority integer,\\n    effect text,\\n    enabled boolean,\\n    metadata jsonb\\n);"
+  },
+  {
+    "object_type": "TABLE",
+    "schema_name": "work",
+    "object_name": "policy_assignments",
+    "definition": "CREATE TABLE work.policy_assignments (\\n    id uuid NOT NULL,\\n    policy_id uuid,\\n    entity_id uuid,\\n    role USER-DEFINED,\\n    condition_expression jsonb\\n);"
+  },
+  {
+    "object_type": "TABLE",
+    "schema_name": "work",
+    "object_name": "policy_conditions",
+    "definition": "CREATE TABLE work.policy_conditions (\\n    id uuid NOT NULL,\\n    policy_id uuid,\\n    attribute_path text NOT NULL,\\n    operator text NOT NULL,\\n    value jsonb NOT NULL,\\n    created_at timestamp with time zone\\n);"
+  },
+  {
+    "object_type": "TABLE",
+    "schema_name": "work",
+    "object_name": "state_machines",
+    "definition": "CREATE TABLE work.state_machines (\\n    id uuid NOT NULL,\\n    entity_type USER-DEFINED NOT NULL,\\n    name text NOT NULL,\\n    description text,\\n    created_at timestamp with time zone\\n);"
+  },
+  {
+    "object_type": "TABLE",
+    "schema_name": "work",
+    "object_name": "state_transition_history",
+    "definition": "CREATE TABLE work.state_transition_history (\\n    id uuid NOT NULL,\\n    entity_type USER-DEFINED NOT NULL,\\n    entity_id uuid NOT NULL,\\n    from_state text NOT NULL,\\n    to_state text NOT NULL,\\n    triggered_by_entity_id uuid,\\n    metadata jsonb,\\n    created_at timestamp with time zone\\n);"
+  },
+  {
+    "object_type": "TABLE",
+    "schema_name": "work",
+    "object_name": "state_transition_rules",
+    "definition": "CREATE TABLE work.state_transition_rules (\\n    id uuid NOT NULL,\\n    entity_type USER-DEFINED NOT NULL,\\n    from_state text NOT NULL,\\n    to_state text NOT NULL,\\n    condition jsonb,\\n    action text,\\n    priority integer,\\n    created_at timestamp with time zone\\n);"
+  },
+  {
+    "object_type": "TABLE",
+    "schema_name": "work",
+    "object_name": "work_contract_versions",
+    "definition": "CREATE TABLE work.work_contract_versions (\\n    id uuid NOT NULL,\\n    contract_id uuid NOT NULL,\\n    version_no integer NOT NULL,\\n    snapshot jsonb NOT NULL,\\n    created_by_entity_id uuid,\\n    created_at timestamp with time zone\\n);"
+  },
+  {
+    "object_type": "TABLE",
+    "schema_name": "work",
+    "object_name": "work_execution_units",
+    "definition": "CREATE TABLE work.work_execution_units (\\n    id uuid NOT NULL,\\n    contract_id uuid NOT NULL,\\n    parent_unit_id uuid,\\n    title text NOT NULL,\\n    description text,\\n    assigned_entity_id uuid,\\n    status USER-DEFINED NOT NULL,\\n    progress_percent numeric NOT NULL,\\n    allocated_amount numeric,\\n    start_at timestamp with time zone,\\n    completed_at timestamp with time zone,\\n    metadata jsonb,\\n    created_at timestamp with time zone,\\n    updated_at timestamp with time zone NOT NULL,\\n    sequence_no integer,\\n    unit_type USER-DEFINED,\\n    assigned_by_entity_id uuid,\\n    is_milestone boolean,\\n    milestone_amount numeric\\n);"
+  },
+  {
+    "object_type": "TABLE",
+    "schema_name": "work",
+    "object_name": "work_financial_routes",
+    "definition": "CREATE TABLE work.work_financial_routes (\\n    id uuid NOT NULL,\\n    contract_id uuid NOT NULL,\\n    payer_entity_id uuid NOT NULL,\\n    payee_entity_id uuid NOT NULL,\\n    beneficiary_type USER-DEFINED NOT NULL,\\n    amount numeric,\\n    percentage numeric,\\n    priority integer NOT NULL,\\n    is_hidden boolean NOT NULL,\\n    metadata jsonb,\\n    created_at timestamp with time zone\\n);"
+  },
+  {
+    "object_type": "TABLE",
+    "schema_name": "work",
+    "object_name": "work_ownership_transfers",
+    "definition": "CREATE TABLE work.work_ownership_transfers (\\n    id uuid NOT NULL,\\n    contract_id uuid NOT NULL,\\n    from_entity_id uuid NOT NULL,\\n    to_entity_id uuid NOT NULL,\\n    transfer_type USER-DEFINED NOT NULL,\\n    transfer_scope USER-DEFINED NOT NULL,\\n    notes text,\\n    effective_at timestamp with time zone NOT NULL,\\n    created_at timestamp with time zone,\\n    percentage numeric,\\n    updated_at timestamp with time zone NOT NULL,\\n    applied_at timestamp with time zone,\\n    propagation_status text,\\n    apply_effects boolean\\n);"
+  },
+  {
+    "object_type": "TABLE",
+    "schema_name": "work",
+    "object_name": "work_visibility",
+    "definition": "CREATE TABLE work.work_visibility (\\n    id uuid NOT NULL,\\n    contract_id uuid NOT NULL,\\n    viewer_entity_id uuid NOT NULL,\\n    visible_entity_id uuid NOT NULL,\\n    visibility_type USER-DEFINED NOT NULL,\\n    created_at timestamp with time zone,\\n    metadata jsonb\\n);"
   },
   {
     "object_type": "CONSTRAINT",
@@ -1188,292 +1488,184 @@
     "definition": "ALTER TABLE work.work_visibility ALTER COLUMN id SET DEFAULT gen_random_uuid();"
   },
   {
-    "object_type": "ENUM",
+    "object_type": "RLS",
     "schema_name": "work",
-    "object_name": "action_type",
-    "definition": "CREATE TYPE work.action_type AS ENUM ('create', 'update', 'status_change', 'approve', 'reject', 'assign', 'transfer_ownership', 'add_participant', 'remove_participant', 'milestone_complete', 'payment_initiated');"
+    "object_name": "approval_step_assignees",
+    "definition": "ALTER TABLE work.approval_step_assignees ENABLE ROW LEVEL SECURITY;"
   },
   {
-    "object_type": "ENUM",
+    "object_type": "RLS",
     "schema_name": "work",
-    "object_name": "approval_status",
-    "definition": "CREATE TYPE work.approval_status AS ENUM ('pending', 'approved', 'rejected');"
+    "object_name": "approval_workflow_steps",
+    "definition": "ALTER TABLE work.approval_workflow_steps ENABLE ROW LEVEL SECURITY;"
   },
   {
-    "object_type": "ENUM",
+    "object_type": "RLS",
     "schema_name": "work",
-    "object_name": "approval_type",
-    "definition": "CREATE TYPE work.approval_type AS ENUM ('signature', 'funding', 'release', 'change', 'termination');"
+    "object_name": "approval_workflow_templates",
+    "definition": "ALTER TABLE work.approval_workflow_templates ENABLE ROW LEVEL SECURITY;"
   },
   {
-    "object_type": "ENUM",
+    "object_type": "RLS",
     "schema_name": "work",
-    "object_name": "beneficiary_type",
-    "definition": "CREATE TYPE work.beneficiary_type AS ENUM ('payer', 'payee', 'both', 'platform');"
+    "object_name": "contract_approval_workflows",
+    "definition": "ALTER TABLE work.contract_approval_workflows ENABLE ROW LEVEL SECURITY;"
   },
   {
-    "object_type": "ENUM",
+    "object_type": "RLS",
     "schema_name": "work",
-    "object_name": "contract_status",
-    "definition": "CREATE TYPE work.contract_status AS ENUM ('draft', 'active', 'paused', 'completed', 'cancelled', 'pending_approval', 'rejected', 'expired', 'disputed', 'archived');"
+    "object_name": "contract_approvals",
+    "definition": "ALTER TABLE work.contract_approvals ENABLE ROW LEVEL SECURITY;"
   },
   {
-    "object_type": "ENUM",
+    "object_type": "RLS",
     "schema_name": "work",
-    "object_name": "contract_visibility_mode",
-    "definition": "CREATE TYPE work.contract_visibility_mode AS ENUM ('internal', 'external', 'client_only');"
+    "object_name": "contract_links",
+    "definition": "ALTER TABLE work.contract_links ENABLE ROW LEVEL SECURITY;"
   },
   {
-    "object_type": "ENUM",
+    "object_type": "RLS",
     "schema_name": "work",
-    "object_name": "dispute_status",
-    "definition": "CREATE TYPE work.dispute_status AS ENUM ('open', 'under_investigation', 'mediation', 'arbitration', 'resolved', 'rejected', 'escalated');"
+    "object_name": "contract_messages",
+    "definition": "ALTER TABLE work.contract_messages ENABLE ROW LEVEL SECURITY;"
   },
   {
-    "object_type": "ENUM",
+    "object_type": "RLS",
     "schema_name": "work",
-    "object_name": "dispute_type",
-    "definition": "CREATE TYPE work.dispute_type AS ENUM ('payment', 'delay', 'quality', 'scope_creep', 'termination', 'compliance', 'other');"
+    "object_name": "contract_ownership_history",
+    "definition": "ALTER TABLE work.contract_ownership_history ENABLE ROW LEVEL SECURITY;"
   },
   {
-    "object_type": "ENUM",
+    "object_type": "RLS",
     "schema_name": "work",
-    "object_name": "entity_type_enum",
-    "definition": "CREATE TYPE work.entity_type_enum AS ENUM ('contract', 'milestone', 'execution_unit', 'approval');"
+    "object_name": "contract_participants",
+    "definition": "ALTER TABLE work.contract_participants ENABLE ROW LEVEL SECURITY;"
   },
   {
-    "object_type": "ENUM",
+    "object_type": "RLS",
     "schema_name": "work",
-    "object_name": "event_type",
-    "definition": "CREATE TYPE work.event_type AS ENUM ('create', 'update', 'status_change', 'delete', 'assign', 'approve', 'reject', 'transfer_ownership', 'add_participant', 'remove_participant', 'milestone_complete', 'payment_initiated', 'pause', 'resume');"
+    "object_name": "contract_permissions",
+    "definition": "ALTER TABLE work.contract_permissions ENABLE ROW LEVEL SECURITY;"
   },
   {
-    "object_type": "ENUM",
+    "object_type": "RLS",
     "schema_name": "work",
-    "object_name": "execution_unit_status",
-    "definition": "CREATE TYPE work.execution_unit_status AS ENUM ('pending', 'in_progress', 'completed', 'cancelled');"
+    "object_name": "contracts",
+    "definition": "ALTER TABLE work.contracts ENABLE ROW LEVEL SECURITY;"
   },
   {
-    "object_type": "ENUM",
+    "object_type": "RLS",
     "schema_name": "work",
-    "object_name": "link_type",
-    "definition": "CREATE TYPE work.link_type AS ENUM ('subcontract', 'amendment', 'supersedes', 'references');"
+    "object_name": "dispute_cases",
+    "definition": "ALTER TABLE work.dispute_cases ENABLE ROW LEVEL SECURITY;"
   },
   {
-    "object_type": "ENUM",
+    "object_type": "RLS",
     "schema_name": "work",
-    "object_name": "message_type",
-    "definition": "CREATE TYPE work.message_type AS ENUM ('text', 'image', 'voice', 'system', 'approval', 'payment', 'milestone');"
+    "object_name": "dispute_evidence",
+    "definition": "ALTER TABLE work.dispute_evidence ENABLE ROW LEVEL SECURITY;"
   },
   {
-    "object_type": "ENUM",
+    "object_type": "RLS",
     "schema_name": "work",
-    "object_name": "milestone_status",
-    "definition": "CREATE TYPE work.milestone_status AS ENUM ('pending', 'in_progress', 'completed', 'cancelled');"
+    "object_name": "dispute_hearings",
+    "definition": "ALTER TABLE work.dispute_hearings ENABLE ROW LEVEL SECURITY;"
   },
   {
-    "object_type": "ENUM",
+    "object_type": "RLS",
     "schema_name": "work",
-    "object_name": "participant_function",
-    "definition": "CREATE TYPE work.participant_function AS ENUM ('signatory', 'financial_manager', 'execution_manager', 'legal_representative', 'observer');"
+    "object_name": "dispute_resolution_actions",
+    "definition": "ALTER TABLE work.dispute_resolution_actions ENABLE ROW LEVEL SECURITY;"
   },
   {
-    "object_type": "ENUM",
+    "object_type": "RLS",
     "schema_name": "work",
-    "object_name": "participant_role",
-    "definition": "CREATE TYPE work.participant_role AS ENUM ('client', 'prime_contractor', 'subcontractor', 'assignee', 'auditor', 'other');"
+    "object_name": "event_outbox",
+    "definition": "ALTER TABLE work.event_outbox ENABLE ROW LEVEL SECURITY;"
   },
   {
-    "object_type": "ENUM",
+    "object_type": "RLS",
     "schema_name": "work",
-    "object_name": "participant_status",
-    "definition": "CREATE TYPE work.participant_status AS ENUM ('active', 'left', 'removed');"
+    "object_name": "event_outbox_processed",
+    "definition": "ALTER TABLE work.event_outbox_processed ENABLE ROW LEVEL SECURITY;"
   },
   {
-    "object_type": "ENUM",
+    "object_type": "RLS",
     "schema_name": "work",
-    "object_name": "participation_mode",
-    "definition": "CREATE TYPE work.participation_mode AS ENUM ('direct', 'indirect', 'nominal');"
+    "object_name": "execution_logs",
+    "definition": "ALTER TABLE work.execution_logs ENABLE ROW LEVEL SECURITY;"
   },
   {
-    "object_type": "ENUM",
+    "object_type": "RLS",
     "schema_name": "work",
-    "object_name": "permission_type",
-    "definition": "CREATE TYPE work.permission_type AS ENUM ('view', 'edit', 'approve', 'fund', 'release', 'manage');"
+    "object_name": "permission_evaluation_log",
+    "definition": "ALTER TABLE work.permission_evaluation_log ENABLE ROW LEVEL SECURITY;"
   },
   {
-    "object_type": "ENUM",
+    "object_type": "RLS",
     "schema_name": "work",
-    "object_name": "transfer_scope",
-    "definition": "CREATE TYPE work.transfer_scope AS ENUM ('full', 'partial');"
+    "object_name": "permission_policies",
+    "definition": "ALTER TABLE work.permission_policies ENABLE ROW LEVEL SECURITY;"
   },
   {
-    "object_type": "ENUM",
+    "object_type": "RLS",
     "schema_name": "work",
-    "object_name": "transfer_type",
-    "definition": "CREATE TYPE work.transfer_type AS ENUM ('full', 'partial', 'temporary', 'permanent');"
+    "object_name": "policy_assignments",
+    "definition": "ALTER TABLE work.policy_assignments ENABLE ROW LEVEL SECURITY;"
   },
   {
-    "object_type": "ENUM",
+    "object_type": "RLS",
     "schema_name": "work",
-    "object_name": "unit_type",
-    "definition": "CREATE TYPE work.unit_type AS ENUM ('phase', 'deliverable', 'task', 'subtask', 'milestone');"
+    "object_name": "policy_conditions",
+    "definition": "ALTER TABLE work.policy_conditions ENABLE ROW LEVEL SECURITY;"
   },
   {
-    "object_type": "ENUM",
+    "object_type": "RLS",
     "schema_name": "work",
-    "object_name": "visibility_scope",
-    "definition": "CREATE TYPE work.visibility_scope AS ENUM ('internal', 'external', 'client_only');"
+    "object_name": "state_machines",
+    "definition": "ALTER TABLE work.state_machines ENABLE ROW LEVEL SECURITY;"
   },
   {
-    "object_type": "ENUM",
+    "object_type": "RLS",
     "schema_name": "work",
-    "object_name": "visibility_type",
-    "definition": "CREATE TYPE work.visibility_type AS ENUM ('full', 'financial_only', 'timeline_only', 'restricted');"
+    "object_name": "state_transition_history",
+    "definition": "ALTER TABLE work.state_transition_history ENABLE ROW LEVEL SECURITY;"
   },
   {
-    "object_type": "EXTENSION",
-    "schema_name": "extensions",
-    "object_name": "pg_stat_statements",
-    "definition": "CREATE EXTENSION IF NOT EXISTS pg_stat_statements;"
-  },
-  {
-    "object_type": "EXTENSION",
-    "schema_name": "extensions",
-    "object_name": "pgcrypto",
-    "definition": "CREATE EXTENSION IF NOT EXISTS pgcrypto;"
-  },
-  {
-    "object_type": "EXTENSION",
-    "schema_name": "pg_catalog",
-    "object_name": "plpgsql",
-    "definition": "CREATE EXTENSION IF NOT EXISTS plpgsql;"
-  },
-  {
-    "object_type": "EXTENSION",
-    "schema_name": "vault",
-    "object_name": "supabase_vault",
-    "definition": "CREATE EXTENSION IF NOT EXISTS supabase_vault;"
-  },
-  {
-    "object_type": "EXTENSION",
-    "schema_name": "extensions",
-    "object_name": "uuid-ossp",
-    "definition": "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"
-  },
-  {
-    "object_type": "FUNCTION",
+    "object_type": "RLS",
     "schema_name": "work",
-    "object_name": "apply_ownership_transfer_to_permissions",
-    "definition": "CREATE OR REPLACE FUNCTION work.apply_ownership_transfer_to_permissions(p_transfer_id uuid)\n RETURNS void\n LANGUAGE plpgsql\nAS $function$\r\nDECLARE\r\n    v_contract_id uuid;\r\n    v_from_entity_id uuid;\r\n    v_to_entity_id uuid;\r\n    v_transfer_scope work.transfer_scope;\r\n    v_percentage numeric;\r\n    v_old_owner_id uuid;\r\n    v_now timestamptz := now();\r\nBEGIN\r\n    SELECT contract_id, from_entity_id, to_entity_id, transfer_scope, percentage\r\n    INTO v_contract_id, v_from_entity_id, v_to_entity_id, v_transfer_scope, v_percentage\r\n    FROM work.work_ownership_transfers\r\n    WHERE id = p_transfer_id;\r\n    \r\n    IF NOT FOUND THEN RETURN; END IF;\r\n\r\n    -- الحصول على المالك الحالي قبل التغيير (للتسجيل)\r\n    SELECT owned_by_entity_id INTO v_old_owner_id\r\n    FROM work.contracts WHERE id = v_contract_id;\r\n\r\n    -- Full transfer\r\n    IF v_transfer_scope = 'full' THEN\r\n        -- تحديث الصلاحيات\r\n        INSERT INTO work.contract_permissions (contract_id, entity_id, permission, granted_by_entity_id)\r\n        VALUES (v_contract_id, v_to_entity_id, 'manage'::work.permission_type, v_from_entity_id)\r\n        ON CONFLICT (contract_id, entity_id, permission) DO NOTHING;\r\n        \r\n        DELETE FROM work.contract_permissions\r\n        WHERE contract_id = v_contract_id\r\n          AND entity_id = v_from_entity_id\r\n          AND permission = 'manage'::work.permission_type;\r\n        \r\n        -- تحديث عقد المالك\r\n        UPDATE work.contracts SET owned_by_entity_id = v_to_entity_id WHERE id = v_contract_id;\r\n\r\n        -- تسجيل نهاية فترة المالك القديم في جدول التاريخ\r\n        UPDATE work.contract_ownership_history\r\n        SET ended_at = v_now\r\n        WHERE contract_id = v_contract_id AND ended_at IS NULL;\r\n\r\n        -- إدخال فترة المالك الجديد\r\n        INSERT INTO work.contract_ownership_history (contract_id, owner_entity_id, transfer_id, started_at)\r\n        VALUES (v_contract_id, v_to_entity_id, p_transfer_id, v_now);\r\n    END IF;\r\n    \r\n    -- Partial transfer (only update allocation_percent – no full ownership change, but still log? optional)\r\n    -- هنا لا نغير المالك، لذا قد لا نضيف تاريخاً. إذا أردت تسجيل النقل الجزئي، يمكنك إضافة سجل منفصل.\r\nEND;\r\n$function$\n"
+    "object_name": "state_transition_rules",
+    "definition": "ALTER TABLE work.state_transition_rules ENABLE ROW LEVEL SECURITY;"
   },
   {
-    "object_type": "FUNCTION",
+    "object_type": "RLS",
     "schema_name": "work",
-    "object_name": "auto_apply_ownership_transfer",
-    "definition": "CREATE OR REPLACE FUNCTION work.auto_apply_ownership_transfer()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    IF NEW.apply_effects THEN\r\n        PERFORM work.apply_ownership_transfer_to_permissions(NEW.id);\r\n        INSERT INTO work.execution_logs (\r\n            contract_id, performed_by_entity_id, event_type,\r\n            target_entity_type, target_entity_id, old_state, new_state\r\n        ) VALUES (\r\n            NEW.contract_id, NEW.from_entity_id, 'transfer_ownership',\r\n            'contract', NEW.contract_id,\r\n            jsonb_build_object('owned_by', (SELECT owned_by_entity_id FROM work.contracts WHERE id = NEW.contract_id)),\r\n            jsonb_build_object('owned_by', NEW.to_entity_id)\r\n        );\r\n        UPDATE work.work_ownership_transfers\r\n        SET applied_at = now(), propagation_status = 'completed'\r\n        WHERE id = NEW.id;\r\n    END IF;\r\n    RETURN NEW;\r\nEND;\r\n$function$\n"
+    "object_name": "work_contract_versions",
+    "definition": "ALTER TABLE work.work_contract_versions ENABLE ROW LEVEL SECURITY;"
   },
   {
-    "object_type": "FUNCTION",
+    "object_type": "RLS",
     "schema_name": "work",
-    "object_name": "can_transition",
-    "definition": "CREATE OR REPLACE FUNCTION work.can_transition(p_entity_type work.entity_type_enum, p_from_state text, p_to_state text, p_entity_id uuid DEFAULT NULL::uuid)\n RETURNS boolean\n LANGUAGE plpgsql\n STABLE\nAS $function$\r\nDECLARE\r\n    v_rule work.state_transition_rules%ROWTYPE;\r\n    v_condition jsonb;\r\n    v_entity_json jsonb;\r\n    v_field text;\r\n    v_operator text;\r\n    v_value jsonb;\r\n    v_actual_value text;\r\n    v_ok boolean := true;\r\nBEGIN\r\n    -- Get transition rule\r\n    SELECT * INTO v_rule\r\n    FROM work.state_transition_rules\r\n    WHERE entity_type = p_entity_type\r\n      AND from_state = p_from_state\r\n      AND to_state = p_to_state;\r\n    \r\n    IF NOT FOUND THEN\r\n        RETURN false;\r\n    END IF;\r\n    \r\n    -- No condition or no entity -> allowed\r\n    IF v_rule.condition IS NULL OR p_entity_id IS NULL THEN\r\n        RETURN true;\r\n    END IF;\r\n    \r\n    v_condition := v_rule.condition;\r\n    \r\n    -- Fetch the current entity as JSON (only if condition exists)\r\n    CASE p_entity_type\r\n        WHEN 'contract' THEN\r\n            SELECT row_to_json(c) INTO v_entity_json\r\n            FROM work.contracts c WHERE id = p_entity_id;\r\n        WHEN 'execution_unit' THEN\r\n            SELECT row_to_json(e) INTO v_entity_json\r\n            FROM work.work_execution_units e WHERE id = p_entity_id;\r\n        WHEN 'approval' THEN\r\n            SELECT row_to_json(a) INTO v_entity_json\r\n            FROM work.contract_approvals a WHERE id = p_entity_id;\r\n        ELSE\r\n            RAISE EXCEPTION 'Unknown entity_type: %', p_entity_type;\r\n    END CASE;\r\n    \r\n    IF v_entity_json IS NULL THEN\r\n        RETURN false;\r\n    END IF;\r\n    \r\n    -- Extract condition parts\r\n    v_field := v_condition->>'field';\r\n    v_operator := v_condition->>'operator';\r\n    v_value := v_condition->'value';\r\n    \r\n    IF v_field IS NULL OR v_operator IS NULL OR v_value IS NULL THEN\r\n        RAISE WARNING 'Invalid condition in rule %: %', v_rule.id, v_condition;\r\n        RETURN false;\r\n    END IF;\r\n    \r\n    -- Get actual value from entity JSON\r\n    v_actual_value := v_entity_json->>v_field;\r\n    IF v_actual_value IS NULL THEN\r\n        -- field does not exist in entity\r\n        RAISE WARNING 'Field % does not exist in entity %', v_field, p_entity_type;\r\n        RETURN false;\r\n    END IF;\r\n    \r\n    -- Evaluate condition based on operator (whitelist)\r\n    IF v_operator = '=' THEN\r\n        v_ok := (v_actual_value = v_value#>>'{}');\r\n    ELSIF v_operator = '!=' THEN\r\n        v_ok := (v_actual_value <> v_value#>>'{}');\r\n    ELSIF v_operator = '<' THEN\r\n        v_ok := (v_actual_value::numeric < v_value#>>'{}'::numeric);\r\n    ELSIF v_operator = '>' THEN\r\n        v_ok := (v_actual_value::numeric > v_value#>>'{}'::numeric);\r\n    ELSIF v_operator = '<=' THEN\r\n        v_ok := (v_actual_value::numeric <= v_value#>>'{}'::numeric);\r\n    ELSIF v_operator = '>=' THEN\r\n        v_ok := (v_actual_value::numeric >= v_value#>>'{}'::numeric);\r\n    ELSIF v_operator = 'LIKE' THEN\r\n        v_ok := (v_actual_value LIKE v_value#>>'{}');\r\n    ELSIF v_operator = 'IN' THEN\r\n        -- check if actual value is in the array\r\n        v_ok := EXISTS (\r\n            SELECT 1 FROM jsonb_array_elements_text(v_value) AS elem\r\n            WHERE elem = v_actual_value\r\n        );\r\n    ELSE\r\n        RAISE WARNING 'Unsupported operator: %', v_operator;\r\n        RETURN false;\r\n    END IF;\r\n    \r\n    RETURN v_ok;\r\nEND;\r\n$function$\n"
+    "object_name": "work_execution_units",
+    "definition": "ALTER TABLE work.work_execution_units ENABLE ROW LEVEL SECURITY;"
   },
   {
-    "object_type": "FUNCTION",
+    "object_type": "RLS",
     "schema_name": "work",
-    "object_name": "check_contract_permission",
-    "definition": "CREATE OR REPLACE FUNCTION work.check_contract_permission(p_entity_id uuid, p_contract_id uuid, p_permission work.permission_type, p_resource_type text DEFAULT NULL::text, p_resource_id uuid DEFAULT NULL::uuid)\n RETURNS boolean\n LANGUAGE plpgsql\n STABLE\nAS $function$\r\nDECLARE\r\n    v_has_direct boolean;\r\n    v_direct_effect boolean;\r\n    v_matched_policies record;\r\n    v_matched_policy_ids uuid[] := '{}';\r\n    v_applied_policy_id uuid;\r\n    v_applied_priority int;\r\n    v_final_result boolean := false;\r\n    v_rule_type text := 'default_deny';\r\n    v_details jsonb := '{}'::jsonb;\r\n    v_row record;\r\n    v_role_list text[];\r\nBEGIN\r\n    -- 1. Direct RBAC permission? (if found, it overrides everything)\r\n    SELECT true INTO v_has_direct\r\n    FROM work.contract_permissions cp\r\n    WHERE cp.entity_id = p_entity_id\r\n      AND cp.contract_id = p_contract_id\r\n      AND cp.permission = p_permission;\r\n    \r\n    IF v_has_direct THEN\r\n        v_final_result := true;\r\n        v_rule_type := 'direct_permission';\r\n        v_details := jsonb_build_object('direct_match', true);\r\n        PERFORM work.log_permission_evaluation(\r\n            p_entity_id, p_contract_id, p_permission, v_final_result,\r\n            ARRAY[]::uuid[], v_rule_type, NULL, NULL, v_details\r\n        );\r\n        RETURN true;\r\n    END IF;\r\n\r\n    -- 2. Get roles of the entity in this contract (for ABAC policies)\r\n    SELECT array_agg(DISTINCT role::text) INTO v_role_list\r\n    FROM work.contract_participants\r\n    WHERE contract_id = p_contract_id AND entity_id = p_entity_id;\r\n    \r\n    v_details := jsonb_build_object('roles', COALESCE(v_role_list, '{}'));\r\n\r\n    -- 3. Evaluate ABAC policies ordered by priority\r\n    FOR v_row IN\r\n        SELECT pp.id, pp.priority, pp.effect\r\n        FROM work.permission_policies pp\r\n        JOIN work.policy_assignments pa ON pa.policy_id = pp.id\r\n        WHERE pp.enabled = true\r\n          AND pp.permission_type = p_permission\r\n          AND (\r\n              pa.entity_id = p_entity_id \r\n              OR (pa.role IS NOT NULL AND pa.role::text = ANY(v_role_list))\r\n          )\r\n        ORDER BY pp.priority DESC\r\n    LOOP\r\n        v_matched_policy_ids := array_append(v_matched_policy_ids, v_row.id);\r\n        v_details := jsonb_set(v_details, '{policies}', \r\n            COALESCE(v_details->'policies', '[]'::jsonb) || \r\n            jsonb_build_object('id', v_row.id, 'priority', v_row.priority, 'effect', v_row.effect)\r\n        );\r\n        \r\n        IF v_row.effect = 'deny' THEN\r\n            v_final_result := false;\r\n            v_rule_type := 'policy_deny';\r\n            v_applied_policy_id := v_row.id;\r\n            v_applied_priority := v_row.priority;\r\n            EXIT;  -- deny immediately\r\n        ELSIF v_row.effect = 'allow' THEN\r\n            v_final_result := true;\r\n            v_rule_type := 'policy_allow';\r\n            v_applied_policy_id := v_row.id;\r\n            v_applied_priority := v_row.priority;\r\n            -- continue to check if there is any deny with higher priority? already ordered by priority, so first match (highest priority) wins.\r\n            EXIT;\r\n        END IF;\r\n    END LOOP;\r\n\r\n    -- If no policy matched, default deny (already false)\r\n    IF v_rule_type = 'default_deny' AND array_length(v_matched_policy_ids, 1) IS NULL THEN\r\n        v_details := jsonb_set(v_details, '{no_policy_matched}', 'true');\r\n    END IF;\r\n\r\n    -- Log evaluation (only if logging is enabled)\r\n    PERFORM work.log_permission_evaluation(\r\n        p_entity_id, p_contract_id, p_permission, v_final_result,\r\n        v_matched_policy_ids, v_rule_type, v_applied_policy_id, v_applied_priority, v_details\r\n    );\r\n    \r\n    RETURN v_final_result;\r\nEND;\r\n$function$\n"
+    "object_name": "work_financial_routes",
+    "definition": "ALTER TABLE work.work_financial_routes ENABLE ROW LEVEL SECURITY;"
   },
   {
-    "object_type": "FUNCTION",
+    "object_type": "RLS",
     "schema_name": "work",
-    "object_name": "check_contract_permission_simple",
-    "definition": "CREATE OR REPLACE FUNCTION work.check_contract_permission_simple(p_entity_id uuid, p_contract_id uuid, p_permission work.permission_type)\n RETURNS boolean\n LANGUAGE plpgsql\n STABLE\nAS $function$\r\nBEGIN\r\n    RETURN work.check_contract_permission(p_entity_id, p_contract_id, p_permission, NULL, NULL);\r\nEND;\r\n$function$\n"
+    "object_name": "work_ownership_transfers",
+    "definition": "ALTER TABLE work.work_ownership_transfers ENABLE ROW LEVEL SECURITY;"
   },
   {
-    "object_type": "FUNCTION",
+    "object_type": "RLS",
     "schema_name": "work",
-    "object_name": "claim_next_event",
-    "definition": "CREATE OR REPLACE FUNCTION work.claim_next_event(p_service_name text, p_limit integer DEFAULT 1)\n RETURNS SETOF work.event_outbox\n LANGUAGE plpgsql\nAS $function$\r\nDECLARE\r\n    v_now timestamptz := now();\r\n    v_lock_timeout interval := interval '5 minutes';\r\n    v_row work.event_outbox%ROWTYPE;\r\nBEGIN\r\n    FOR v_row IN\r\n        SELECT * FROM work.event_outbox\r\n        WHERE status = 'pending'\r\n          AND (locked_until IS NULL OR locked_until < v_now)\r\n        ORDER BY created_at\r\n        LIMIT p_limit\r\n        FOR UPDATE SKIP LOCKED\r\n    LOOP\r\n        UPDATE work.event_outbox\r\n        SET locked_until = v_now + v_lock_timeout,\r\n            processed_by = p_service_name,\r\n            status = 'processing'\r\n        WHERE id = v_row.id;\r\n        \r\n        RETURN NEXT v_row;\r\n    END LOOP;\r\n    RETURN;\r\nEND;\r\n$function$\n"
-  },
-  {
-    "object_type": "FUNCTION",
-    "schema_name": "work",
-    "object_name": "complete_event",
-    "definition": "CREATE OR REPLACE FUNCTION work.complete_event(p_idempotency_key uuid, p_service_name text, p_result text DEFAULT 'success'::text)\n RETURNS void\n LANGUAGE plpgsql\nAS $function$\r\nDECLARE\r\n    v_event work.event_outbox%ROWTYPE;\r\nBEGIN\r\n    SELECT * INTO v_event FROM work.event_outbox WHERE idempotency_key = p_idempotency_key;\r\n    IF NOT FOUND THEN\r\n        RAISE EXCEPTION 'Event with idempotency_key % not found', p_idempotency_key;\r\n    END IF;\r\n\r\n    INSERT INTO work.event_outbox_processed (idempotency_key, event_type, entity_type, entity_id, service_name, result, processed_at)\r\n    VALUES (v_event.idempotency_key, v_event.event_type, v_event.entity_type, v_event.entity_id, p_service_name, p_result, now())\r\n    ON CONFLICT (idempotency_key) DO UPDATE\r\n    SET service_name = EXCLUDED.service_name, result = EXCLUDED.result, processed_at = EXCLUDED.processed_at;\r\n\r\n    UPDATE work.event_outbox\r\n    SET status = 'completed', processed_at = now(), retry_count = retry_count + 1\r\n    WHERE idempotency_key = p_idempotency_key;\r\nEND;\r\n$function$\n"
-  },
-  {
-    "object_type": "FUNCTION",
-    "schema_name": "work",
-    "object_name": "contract_ownership_history_init",
-    "definition": "CREATE OR REPLACE FUNCTION work.contract_ownership_history_init()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    INSERT INTO work.contract_ownership_history (contract_id, owner_entity_id, started_at)\r\n    VALUES (NEW.id, NEW.owned_by_entity_id, NEW.created_at)\r\n    ON CONFLICT DO NOTHING;\r\n    RETURN NEW;\r\nEND;\r\n$function$\n"
-  },
-  {
-    "object_type": "FUNCTION",
-    "schema_name": "work",
-    "object_name": "contract_state_transition_trigger",
-    "definition": "CREATE OR REPLACE FUNCTION work.contract_state_transition_trigger()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    IF OLD.status IS DISTINCT FROM NEW.status THEN\r\n        IF NOT work.can_transition('contract'::work.entity_type_enum, OLD.status::text, NEW.status::text, NEW.id) THEN\r\n            RAISE EXCEPTION 'Invalid state transition from % to % for contract %', OLD.status, NEW.status, NEW.id;\r\n        END IF;\r\n        INSERT INTO work.state_transition_history (entity_type, entity_id, from_state, to_state, triggered_by_entity_id, created_at)\r\n        VALUES ('contract', NEW.id, OLD.status::text, NEW.status::text, current_setting('app.current_entity_id', true)::uuid, now());\r\n    END IF;\r\n    RETURN NEW;\r\nEND;\r\n$function$\n"
-  },
-  {
-    "object_type": "FUNCTION",
-    "schema_name": "work",
-    "object_name": "contracts_search_vector_update",
-    "definition": "CREATE OR REPLACE FUNCTION work.contracts_search_vector_update()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    NEW.search_vector :=\r\n        setweight(to_tsvector('simple', COALESCE(NEW.title, '')), 'A') ||\r\n        setweight(to_tsvector('simple', COALESCE(NEW.description, '')), 'B') ||\r\n        setweight(to_tsvector('simple', COALESCE(NEW.asset_code, '')), 'C');\r\n    RETURN NEW;\r\nEND;\r\n$function$\n"
-  },
-  {
-    "object_type": "FUNCTION",
-    "schema_name": "work",
-    "object_name": "disable_permission_logging",
-    "definition": "CREATE OR REPLACE FUNCTION work.disable_permission_logging()\n RETURNS text\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    PERFORM set_config('work.log_permissions', 'off', false);\r\n    RETURN 'Permission logging disabled.';\r\nEND;\r\n$function$\n"
-  },
-  {
-    "object_type": "FUNCTION",
-    "schema_name": "work",
-    "object_name": "enable_permission_logging",
-    "definition": "CREATE OR REPLACE FUNCTION work.enable_permission_logging()\n RETURNS text\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    PERFORM set_config('work.log_permissions', 'on', false);\r\n    RETURN 'Permission logging enabled for this session.';\r\nEND;\r\n$function$\n"
-  },
-  {
-    "object_type": "FUNCTION",
-    "schema_name": "work",
-    "object_name": "fail_event",
-    "definition": "CREATE OR REPLACE FUNCTION work.fail_event(p_idempotency_key uuid, p_error text)\n RETURNS void\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    UPDATE work.event_outbox\r\n    SET status = 'pending',\r\n        last_error = p_error,\r\n        retry_count = retry_count + 1,\r\n        locked_until = NULL,\r\n        processed_by = NULL\r\n    WHERE idempotency_key = p_idempotency_key;\r\nEND;\r\n$function$\n"
-  },
-  {
-    "object_type": "FUNCTION",
-    "schema_name": "work",
-    "object_name": "log_permission_evaluation",
-    "definition": "CREATE OR REPLACE FUNCTION work.log_permission_evaluation(p_entity_id uuid, p_contract_id uuid, p_permission work.permission_type, p_result boolean, p_matched_policy_ids uuid[], p_matched_rule_type text, p_applied_policy_id uuid, p_priority_applied integer, p_details jsonb)\n RETURNS void\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    -- فقط إذا كان متغير الجلسة 'work.log_permissions' = 'on'\r\n    IF current_setting('work.log_permissions', true) = 'on' THEN\r\n        INSERT INTO work.permission_evaluation_log (\r\n            entity_id, contract_id, permission, result,\r\n            matched_policy_ids, matched_rule_type, applied_policy_id,\r\n            priority_applied, evaluation_details, triggered_by_setting\r\n        ) VALUES (\r\n            p_entity_id, p_contract_id, p_permission, p_result,\r\n            p_matched_policy_ids, p_matched_rule_type, p_applied_policy_id,\r\n            p_priority_applied, p_details, 'on'\r\n        );\r\n    END IF;\r\nEND;\r\n$function$\n"
-  },
-  {
-    "object_type": "FUNCTION",
-    "schema_name": "work",
-    "object_name": "notify_dispute_event",
-    "definition": "CREATE OR REPLACE FUNCTION work.notify_dispute_event()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    INSERT INTO work.event_outbox (\r\n        idempotency_key, event_type, entity_type, entity_id, payload, status\r\n    ) VALUES (\r\n        gen_random_uuid(),\r\n        CASE TG_OP\r\n            WHEN 'INSERT' THEN 'dispute.created'\r\n            WHEN 'UPDATE' THEN 'dispute.updated'\r\n        END,\r\n        'dispute',\r\n        NEW.id,\r\n        jsonb_build_object(\r\n            'dispute_id', NEW.id,\r\n            'contract_id', NEW.contract_id,\r\n            'status', NEW.status,\r\n            'dispute_type', NEW.dispute_type,\r\n            'raised_by', NEW.raised_by_entity_id,\r\n            'against', NEW.against_entity_id\r\n        ),\r\n        'pending'\r\n    );\r\n    RETURN NEW;\r\nEND;\r\n$function$\n"
-  },
-  {
-    "object_type": "FUNCTION",
-    "schema_name": "work",
-    "object_name": "propagate_ownership_transfer_event",
-    "definition": "CREATE OR REPLACE FUNCTION work.propagate_ownership_transfer_event()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    IF (TG_OP = 'INSERT' AND NEW.apply_effects = true) OR\r\n       (TG_OP = 'UPDATE' AND NEW.applied_at IS DISTINCT FROM OLD.applied_at AND NEW.applied_at IS NOT NULL) THEN\r\n       \r\n       INSERT INTO work.event_outbox (\r\n           idempotency_key, event_type, entity_type, entity_id, payload, status\r\n       ) VALUES (\r\n           gen_random_uuid(),\r\n           'ownership.transferred',\r\n           'contract',\r\n           NEW.contract_id,\r\n           jsonb_build_object(\r\n               'transfer_id', NEW.id,\r\n               'from_entity_id', NEW.from_entity_id,\r\n               'to_entity_id', NEW.to_entity_id,\r\n               'transfer_scope', NEW.transfer_scope,\r\n               'percentage', NEW.percentage,\r\n               'effective_at', NEW.effective_at\r\n           ),\r\n           'pending'\r\n       );\r\n    END IF;\r\n    RETURN NEW;\r\nEND;\r\n$function$\n"
-  },
-  {
-    "object_type": "FUNCTION",
-    "schema_name": "work",
-    "object_name": "transition_entity_state",
-    "definition": "CREATE OR REPLACE FUNCTION work.transition_entity_state(p_entity_type work.entity_type_enum, p_entity_id uuid, p_new_state text, p_triggered_by_entity_id uuid DEFAULT NULL::uuid, p_metadata jsonb DEFAULT NULL::jsonb)\n RETURNS boolean\n LANGUAGE plpgsql\nAS $function$\r\nDECLARE\r\n    v_old_state text;\r\n    v_table_name text;\r\nBEGIN\r\n    CASE p_entity_type\r\n        WHEN 'contract' THEN\r\n            v_table_name := 'contracts';\r\n            SELECT status::text INTO v_old_state FROM work.contracts WHERE id = p_entity_id;\r\n        WHEN 'execution_unit' THEN\r\n            v_table_name := 'work_execution_units';\r\n            SELECT status::text INTO v_old_state FROM work.work_execution_units WHERE id = p_entity_id;\r\n        WHEN 'approval' THEN\r\n            v_table_name := 'contract_approvals';\r\n            SELECT status::text INTO v_old_state FROM work.contract_approvals WHERE id = p_entity_id;\r\n        ELSE\r\n            RETURN false;\r\n    END CASE;\r\n    \r\n    IF NOT FOUND THEN\r\n        RETURN false;\r\n    END IF;\r\n    \r\n    IF NOT work.can_transition(p_entity_type, v_old_state, p_new_state, p_entity_id) THEN\r\n        RETURN false;\r\n    END IF;\r\n    \r\n    EXECUTE format('UPDATE work.%I SET status = $1, updated_at = now() WHERE id = $2', v_table_name)\r\n    USING p_new_state, p_entity_id;\r\n    \r\n    INSERT INTO work.state_transition_history (\r\n        entity_type, entity_id, from_state, to_state, triggered_by_entity_id, metadata, created_at\r\n    ) VALUES (\r\n        p_entity_type, p_entity_id, v_old_state, p_new_state, p_triggered_by_entity_id, p_metadata, now()\r\n    );\r\n    \r\n    INSERT INTO work.event_outbox (\r\n        idempotency_key, event_type, entity_type, entity_id, payload, status\r\n    ) VALUES (\r\n        gen_random_uuid(),\r\n        'state.changed',\r\n        p_entity_type::text,\r\n        p_entity_id,\r\n        jsonb_build_object('old_state', v_old_state, 'new_state', p_new_state, 'triggered_by', p_triggered_by_entity_id),\r\n        'pending'\r\n    );\r\n    \r\n    RETURN true;\r\nEND;\r\n$function$\n"
-  },
-  {
-    "object_type": "FUNCTION",
-    "schema_name": "work",
-    "object_name": "update_contract_dispute_flag",
-    "definition": "CREATE OR REPLACE FUNCTION work.update_contract_dispute_flag()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    UPDATE work.contracts\r\n    SET has_open_dispute = EXISTS (\r\n        SELECT 1 FROM work.dispute_cases\r\n        WHERE contract_id = NEW.contract_id\r\n          AND status NOT IN ('resolved', 'rejected')\r\n    )\r\n    WHERE id = NEW.contract_id;\r\n    RETURN NEW;\r\nEND;\r\n$function$\n"
-  },
-  {
-    "object_type": "FUNCTION",
-    "schema_name": "work",
-    "object_name": "update_updated_at_column",
-    "definition": "CREATE OR REPLACE FUNCTION work.update_updated_at_column()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    NEW.updated_at = now();\r\n    RETURN NEW;\r\nEND;\r\n$function$\n"
+    "object_name": "work_visibility",
+    "definition": "ALTER TABLE work.work_visibility ENABLE ROW LEVEL SECURITY;"
   },
   {
     "object_type": "INDEX",
@@ -2010,364 +2202,118 @@
     "definition": "CREATE UNIQUE INDEX work_visibility_pkey ON work.work_visibility USING btree (id);"
   },
   {
-    "object_type": "RLS",
+    "object_type": "FUNCTION",
     "schema_name": "work",
-    "object_name": "approval_step_assignees",
-    "definition": "ALTER TABLE work.approval_step_assignees ENABLE ROW LEVEL SECURITY;"
+    "object_name": "apply_ownership_transfer_to_permissions",
+    "definition": "CREATE OR REPLACE FUNCTION work.apply_ownership_transfer_to_permissions(p_transfer_id uuid)\n RETURNS void\n LANGUAGE plpgsql\nAS $function$\r\nDECLARE\r\n    v_contract_id uuid;\r\n    v_from_entity_id uuid;\r\n    v_to_entity_id uuid;\r\n    v_transfer_scope work.transfer_scope;\r\n    v_percentage numeric;\r\n    v_old_owner_id uuid;\r\n    v_now timestamptz := now();\r\nBEGIN\r\n    SELECT contract_id, from_entity_id, to_entity_id, transfer_scope, percentage\r\n    INTO v_contract_id, v_from_entity_id, v_to_entity_id, v_transfer_scope, v_percentage\r\n    FROM work.work_ownership_transfers\r\n    WHERE id = p_transfer_id;\r\n    \r\n    IF NOT FOUND THEN RETURN; END IF;\r\n\r\n    -- الحصول على المالك الحالي قبل التغيير (للتسجيل)\r\n    SELECT owned_by_entity_id INTO v_old_owner_id\r\n    FROM work.contracts WHERE id = v_contract_id;\r\n\r\n    -- Full transfer\r\n    IF v_transfer_scope = 'full' THEN\r\n        -- تحديث الصلاحيات\r\n        INSERT INTO work.contract_permissions (contract_id, entity_id, permission, granted_by_entity_id)\r\n        VALUES (v_contract_id, v_to_entity_id, 'manage'::work.permission_type, v_from_entity_id)\r\n        ON CONFLICT (contract_id, entity_id, permission) DO NOTHING;\r\n        \r\n        DELETE FROM work.contract_permissions\r\n        WHERE contract_id = v_contract_id\r\n          AND entity_id = v_from_entity_id\r\n          AND permission = 'manage'::work.permission_type;\r\n        \r\n        -- تحديث عقد المالك\r\n        UPDATE work.contracts SET owned_by_entity_id = v_to_entity_id WHERE id = v_contract_id;\r\n\r\n        -- تسجيل نهاية فترة المالك القديم في جدول التاريخ\r\n        UPDATE work.contract_ownership_history\r\n        SET ended_at = v_now\r\n        WHERE contract_id = v_contract_id AND ended_at IS NULL;\r\n\r\n        -- إدخال فترة المالك الجديد\r\n        INSERT INTO work.contract_ownership_history (contract_id, owner_entity_id, transfer_id, started_at)\r\n        VALUES (v_contract_id, v_to_entity_id, p_transfer_id, v_now);\r\n    END IF;\r\n    \r\n    -- Partial transfer (only update allocation_percent – no full ownership change, but still log? optional)\r\n    -- هنا لا نغير المالك، لذا قد لا نضيف تاريخاً. إذا أردت تسجيل النقل الجزئي، يمكنك إضافة سجل منفصل.\r\nEND;\r\n$function$\n"
   },
   {
-    "object_type": "RLS",
+    "object_type": "FUNCTION",
     "schema_name": "work",
-    "object_name": "approval_workflow_steps",
-    "definition": "ALTER TABLE work.approval_workflow_steps ENABLE ROW LEVEL SECURITY;"
+    "object_name": "auto_apply_ownership_transfer",
+    "definition": "CREATE OR REPLACE FUNCTION work.auto_apply_ownership_transfer()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    IF NEW.apply_effects THEN\r\n        PERFORM work.apply_ownership_transfer_to_permissions(NEW.id);\r\n        INSERT INTO work.execution_logs (\r\n            contract_id, performed_by_entity_id, event_type,\r\n            target_entity_type, target_entity_id, old_state, new_state\r\n        ) VALUES (\r\n            NEW.contract_id, NEW.from_entity_id, 'transfer_ownership',\r\n            'contract', NEW.contract_id,\r\n            jsonb_build_object('owned_by', (SELECT owned_by_entity_id FROM work.contracts WHERE id = NEW.contract_id)),\r\n            jsonb_build_object('owned_by', NEW.to_entity_id)\r\n        );\r\n        UPDATE work.work_ownership_transfers\r\n        SET applied_at = now(), propagation_status = 'completed'\r\n        WHERE id = NEW.id;\r\n    END IF;\r\n    RETURN NEW;\r\nEND;\r\n$function$\n"
   },
   {
-    "object_type": "RLS",
+    "object_type": "FUNCTION",
     "schema_name": "work",
-    "object_name": "approval_workflow_templates",
-    "definition": "ALTER TABLE work.approval_workflow_templates ENABLE ROW LEVEL SECURITY;"
+    "object_name": "can_transition",
+    "definition": "CREATE OR REPLACE FUNCTION work.can_transition(p_entity_type work.entity_type_enum, p_from_state text, p_to_state text, p_entity_id uuid DEFAULT NULL::uuid)\n RETURNS boolean\n LANGUAGE plpgsql\n STABLE\nAS $function$\r\nDECLARE\r\n    v_rule work.state_transition_rules%ROWTYPE;\r\n    v_condition jsonb;\r\n    v_entity_json jsonb;\r\n    v_field text;\r\n    v_operator text;\r\n    v_value jsonb;\r\n    v_actual_value text;\r\n    v_ok boolean := true;\r\nBEGIN\r\n    -- Get transition rule\r\n    SELECT * INTO v_rule\r\n    FROM work.state_transition_rules\r\n    WHERE entity_type = p_entity_type\r\n      AND from_state = p_from_state\r\n      AND to_state = p_to_state;\r\n    \r\n    IF NOT FOUND THEN\r\n        RETURN false;\r\n    END IF;\r\n    \r\n    -- No condition or no entity -> allowed\r\n    IF v_rule.condition IS NULL OR p_entity_id IS NULL THEN\r\n        RETURN true;\r\n    END IF;\r\n    \r\n    v_condition := v_rule.condition;\r\n    \r\n    -- Fetch the current entity as JSON (only if condition exists)\r\n    CASE p_entity_type\r\n        WHEN 'contract' THEN\r\n            SELECT row_to_json(c) INTO v_entity_json\r\n            FROM work.contracts c WHERE id = p_entity_id;\r\n        WHEN 'execution_unit' THEN\r\n            SELECT row_to_json(e) INTO v_entity_json\r\n            FROM work.work_execution_units e WHERE id = p_entity_id;\r\n        WHEN 'approval' THEN\r\n            SELECT row_to_json(a) INTO v_entity_json\r\n            FROM work.contract_approvals a WHERE id = p_entity_id;\r\n        ELSE\r\n            RAISE EXCEPTION 'Unknown entity_type: %', p_entity_type;\r\n    END CASE;\r\n    \r\n    IF v_entity_json IS NULL THEN\r\n        RETURN false;\r\n    END IF;\r\n    \r\n    -- Extract condition parts\r\n    v_field := v_condition->>'field';\r\n    v_operator := v_condition->>'operator';\r\n    v_value := v_condition->'value';\r\n    \r\n    IF v_field IS NULL OR v_operator IS NULL OR v_value IS NULL THEN\r\n        RAISE WARNING 'Invalid condition in rule %: %', v_rule.id, v_condition;\r\n        RETURN false;\r\n    END IF;\r\n    \r\n    -- Get actual value from entity JSON\r\n    v_actual_value := v_entity_json->>v_field;\r\n    IF v_actual_value IS NULL THEN\r\n        -- field does not exist in entity\r\n        RAISE WARNING 'Field % does not exist in entity %', v_field, p_entity_type;\r\n        RETURN false;\r\n    END IF;\r\n    \r\n    -- Evaluate condition based on operator (whitelist)\r\n    IF v_operator = '=' THEN\r\n        v_ok := (v_actual_value = v_value#>>'{}');\r\n    ELSIF v_operator = '!=' THEN\r\n        v_ok := (v_actual_value <> v_value#>>'{}');\r\n    ELSIF v_operator = '<' THEN\r\n        v_ok := (v_actual_value::numeric < v_value#>>'{}'::numeric);\r\n    ELSIF v_operator = '>' THEN\r\n        v_ok := (v_actual_value::numeric > v_value#>>'{}'::numeric);\r\n    ELSIF v_operator = '<=' THEN\r\n        v_ok := (v_actual_value::numeric <= v_value#>>'{}'::numeric);\r\n    ELSIF v_operator = '>=' THEN\r\n        v_ok := (v_actual_value::numeric >= v_value#>>'{}'::numeric);\r\n    ELSIF v_operator = 'LIKE' THEN\r\n        v_ok := (v_actual_value LIKE v_value#>>'{}');\r\n    ELSIF v_operator = 'IN' THEN\r\n        -- check if actual value is in the array\r\n        v_ok := EXISTS (\r\n            SELECT 1 FROM jsonb_array_elements_text(v_value) AS elem\r\n            WHERE elem = v_actual_value\r\n        );\r\n    ELSE\r\n        RAISE WARNING 'Unsupported operator: %', v_operator;\r\n        RETURN false;\r\n    END IF;\r\n    \r\n    RETURN v_ok;\r\nEND;\r\n$function$\n"
   },
   {
-    "object_type": "RLS",
+    "object_type": "FUNCTION",
     "schema_name": "work",
-    "object_name": "contract_approval_workflows",
-    "definition": "ALTER TABLE work.contract_approval_workflows ENABLE ROW LEVEL SECURITY;"
+    "object_name": "check_contract_permission",
+    "definition": "CREATE OR REPLACE FUNCTION work.check_contract_permission(p_entity_id uuid, p_contract_id uuid, p_permission work.permission_type, p_resource_type text DEFAULT NULL::text, p_resource_id uuid DEFAULT NULL::uuid)\n RETURNS boolean\n LANGUAGE plpgsql\n STABLE\nAS $function$\r\nDECLARE\r\n    v_has_direct boolean;\r\n    v_direct_effect boolean;\r\n    v_matched_policies record;\r\n    v_matched_policy_ids uuid[] := '{}';\r\n    v_applied_policy_id uuid;\r\n    v_applied_priority int;\r\n    v_final_result boolean := false;\r\n    v_rule_type text := 'default_deny';\r\n    v_details jsonb := '{}'::jsonb;\r\n    v_row record;\r\n    v_role_list text[];\r\nBEGIN\r\n    -- 1. Direct RBAC permission? (if found, it overrides everything)\r\n    SELECT true INTO v_has_direct\r\n    FROM work.contract_permissions cp\r\n    WHERE cp.entity_id = p_entity_id\r\n      AND cp.contract_id = p_contract_id\r\n      AND cp.permission = p_permission;\r\n    \r\n    IF v_has_direct THEN\r\n        v_final_result := true;\r\n        v_rule_type := 'direct_permission';\r\n        v_details := jsonb_build_object('direct_match', true);\r\n        PERFORM work.log_permission_evaluation(\r\n            p_entity_id, p_contract_id, p_permission, v_final_result,\r\n            ARRAY[]::uuid[], v_rule_type, NULL, NULL, v_details\r\n        );\r\n        RETURN true;\r\n    END IF;\r\n\r\n    -- 2. Get roles of the entity in this contract (for ABAC policies)\r\n    SELECT array_agg(DISTINCT role::text) INTO v_role_list\r\n    FROM work.contract_participants\r\n    WHERE contract_id = p_contract_id AND entity_id = p_entity_id;\r\n    \r\n    v_details := jsonb_build_object('roles', COALESCE(v_role_list, '{}'));\r\n\r\n    -- 3. Evaluate ABAC policies ordered by priority\r\n    FOR v_row IN\r\n        SELECT pp.id, pp.priority, pp.effect\r\n        FROM work.permission_policies pp\r\n        JOIN work.policy_assignments pa ON pa.policy_id = pp.id\r\n        WHERE pp.enabled = true\r\n          AND pp.permission_type = p_permission\r\n          AND (\r\n              pa.entity_id = p_entity_id \r\n              OR (pa.role IS NOT NULL AND pa.role::text = ANY(v_role_list))\r\n          )\r\n        ORDER BY pp.priority DESC\r\n    LOOP\r\n        v_matched_policy_ids := array_append(v_matched_policy_ids, v_row.id);\r\n        v_details := jsonb_set(v_details, '{policies}', \r\n            COALESCE(v_details->'policies', '[]'::jsonb) || \r\n            jsonb_build_object('id', v_row.id, 'priority', v_row.priority, 'effect', v_row.effect)\r\n        );\r\n        \r\n        IF v_row.effect = 'deny' THEN\r\n            v_final_result := false;\r\n            v_rule_type := 'policy_deny';\r\n            v_applied_policy_id := v_row.id;\r\n            v_applied_priority := v_row.priority;\r\n            EXIT;  -- deny immediately\r\n        ELSIF v_row.effect = 'allow' THEN\r\n            v_final_result := true;\r\n            v_rule_type := 'policy_allow';\r\n            v_applied_policy_id := v_row.id;\r\n            v_applied_priority := v_row.priority;\r\n            -- continue to check if there is any deny with higher priority? already ordered by priority, so first match (highest priority) wins.\r\n            EXIT;\r\n        END IF;\r\n    END LOOP;\r\n\r\n    -- If no policy matched, default deny (already false)\r\n    IF v_rule_type = 'default_deny' AND array_length(v_matched_policy_ids, 1) IS NULL THEN\r\n        v_details := jsonb_set(v_details, '{no_policy_matched}', 'true');\r\n    END IF;\r\n\r\n    -- Log evaluation (only if logging is enabled)\r\n    PERFORM work.log_permission_evaluation(\r\n        p_entity_id, p_contract_id, p_permission, v_final_result,\r\n        v_matched_policy_ids, v_rule_type, v_applied_policy_id, v_applied_priority, v_details\r\n    );\r\n    \r\n    RETURN v_final_result;\r\nEND;\r\n$function$\n"
   },
   {
-    "object_type": "RLS",
+    "object_type": "FUNCTION",
     "schema_name": "work",
-    "object_name": "contract_approvals",
-    "definition": "ALTER TABLE work.contract_approvals ENABLE ROW LEVEL SECURITY;"
+    "object_name": "check_contract_permission_simple",
+    "definition": "CREATE OR REPLACE FUNCTION work.check_contract_permission_simple(p_entity_id uuid, p_contract_id uuid, p_permission work.permission_type)\n RETURNS boolean\n LANGUAGE plpgsql\n STABLE\nAS $function$\r\nBEGIN\r\n    RETURN work.check_contract_permission(p_entity_id, p_contract_id, p_permission, NULL, NULL);\r\nEND;\r\n$function$\n"
   },
   {
-    "object_type": "RLS",
+    "object_type": "FUNCTION",
     "schema_name": "work",
-    "object_name": "contract_links",
-    "definition": "ALTER TABLE work.contract_links ENABLE ROW LEVEL SECURITY;"
+    "object_name": "claim_next_event",
+    "definition": "CREATE OR REPLACE FUNCTION work.claim_next_event(p_service_name text, p_limit integer DEFAULT 1)\n RETURNS SETOF work.event_outbox\n LANGUAGE plpgsql\nAS $function$\r\nDECLARE\r\n    v_now timestamptz := now();\r\n    v_lock_timeout interval := interval '5 minutes';\r\n    v_row work.event_outbox%ROWTYPE;\r\nBEGIN\r\n    FOR v_row IN\r\n        SELECT * FROM work.event_outbox\r\n        WHERE status = 'pending'\r\n          AND (locked_until IS NULL OR locked_until < v_now)\r\n        ORDER BY created_at\r\n        LIMIT p_limit\r\n        FOR UPDATE SKIP LOCKED\r\n    LOOP\r\n        UPDATE work.event_outbox\r\n        SET locked_until = v_now + v_lock_timeout,\r\n            processed_by = p_service_name,\r\n            status = 'processing'\r\n        WHERE id = v_row.id;\r\n        \r\n        RETURN NEXT v_row;\r\n    END LOOP;\r\n    RETURN;\r\nEND;\r\n$function$\n"
   },
   {
-    "object_type": "RLS",
+    "object_type": "FUNCTION",
     "schema_name": "work",
-    "object_name": "contract_messages",
-    "definition": "ALTER TABLE work.contract_messages ENABLE ROW LEVEL SECURITY;"
+    "object_name": "complete_event",
+    "definition": "CREATE OR REPLACE FUNCTION work.complete_event(p_idempotency_key uuid, p_service_name text, p_result text DEFAULT 'success'::text)\n RETURNS void\n LANGUAGE plpgsql\nAS $function$\r\nDECLARE\r\n    v_event work.event_outbox%ROWTYPE;\r\nBEGIN\r\n    SELECT * INTO v_event FROM work.event_outbox WHERE idempotency_key = p_idempotency_key;\r\n    IF NOT FOUND THEN\r\n        RAISE EXCEPTION 'Event with idempotency_key % not found', p_idempotency_key;\r\n    END IF;\r\n\r\n    INSERT INTO work.event_outbox_processed (idempotency_key, event_type, entity_type, entity_id, service_name, result, processed_at)\r\n    VALUES (v_event.idempotency_key, v_event.event_type, v_event.entity_type, v_event.entity_id, p_service_name, p_result, now())\r\n    ON CONFLICT (idempotency_key) DO UPDATE\r\n    SET service_name = EXCLUDED.service_name, result = EXCLUDED.result, processed_at = EXCLUDED.processed_at;\r\n\r\n    UPDATE work.event_outbox\r\n    SET status = 'completed', processed_at = now(), retry_count = retry_count + 1\r\n    WHERE idempotency_key = p_idempotency_key;\r\nEND;\r\n$function$\n"
   },
   {
-    "object_type": "RLS",
+    "object_type": "FUNCTION",
     "schema_name": "work",
-    "object_name": "contract_ownership_history",
-    "definition": "ALTER TABLE work.contract_ownership_history ENABLE ROW LEVEL SECURITY;"
+    "object_name": "contract_ownership_history_init",
+    "definition": "CREATE OR REPLACE FUNCTION work.contract_ownership_history_init()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    INSERT INTO work.contract_ownership_history (contract_id, owner_entity_id, started_at)\r\n    VALUES (NEW.id, NEW.owned_by_entity_id, NEW.created_at)\r\n    ON CONFLICT DO NOTHING;\r\n    RETURN NEW;\r\nEND;\r\n$function$\n"
   },
   {
-    "object_type": "RLS",
+    "object_type": "FUNCTION",
     "schema_name": "work",
-    "object_name": "contract_participants",
-    "definition": "ALTER TABLE work.contract_participants ENABLE ROW LEVEL SECURITY;"
+    "object_name": "contract_state_transition_trigger",
+    "definition": "CREATE OR REPLACE FUNCTION work.contract_state_transition_trigger()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    IF OLD.status IS DISTINCT FROM NEW.status THEN\r\n        IF NOT work.can_transition('contract'::work.entity_type_enum, OLD.status::text, NEW.status::text, NEW.id) THEN\r\n            RAISE EXCEPTION 'Invalid state transition from % to % for contract %', OLD.status, NEW.status, NEW.id;\r\n        END IF;\r\n        INSERT INTO work.state_transition_history (entity_type, entity_id, from_state, to_state, triggered_by_entity_id, created_at)\r\n        VALUES ('contract', NEW.id, OLD.status::text, NEW.status::text, current_setting('app.current_entity_id', true)::uuid, now());\r\n    END IF;\r\n    RETURN NEW;\r\nEND;\r\n$function$\n"
   },
   {
-    "object_type": "RLS",
+    "object_type": "FUNCTION",
     "schema_name": "work",
-    "object_name": "contract_permissions",
-    "definition": "ALTER TABLE work.contract_permissions ENABLE ROW LEVEL SECURITY;"
+    "object_name": "contracts_search_vector_update",
+    "definition": "CREATE OR REPLACE FUNCTION work.contracts_search_vector_update()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    NEW.search_vector :=\r\n        setweight(to_tsvector('simple', COALESCE(NEW.title, '')), 'A') ||\r\n        setweight(to_tsvector('simple', COALESCE(NEW.description, '')), 'B') ||\r\n        setweight(to_tsvector('simple', COALESCE(NEW.asset_code, '')), 'C');\r\n    RETURN NEW;\r\nEND;\r\n$function$\n"
   },
   {
-    "object_type": "RLS",
+    "object_type": "FUNCTION",
     "schema_name": "work",
-    "object_name": "contracts",
-    "definition": "ALTER TABLE work.contracts ENABLE ROW LEVEL SECURITY;"
+    "object_name": "disable_permission_logging",
+    "definition": "CREATE OR REPLACE FUNCTION work.disable_permission_logging()\n RETURNS text\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    PERFORM set_config('work.log_permissions', 'off', false);\r\n    RETURN 'Permission logging disabled.';\r\nEND;\r\n$function$\n"
   },
   {
-    "object_type": "RLS",
+    "object_type": "FUNCTION",
     "schema_name": "work",
-    "object_name": "dispute_cases",
-    "definition": "ALTER TABLE work.dispute_cases ENABLE ROW LEVEL SECURITY;"
+    "object_name": "enable_permission_logging",
+    "definition": "CREATE OR REPLACE FUNCTION work.enable_permission_logging()\n RETURNS text\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    PERFORM set_config('work.log_permissions', 'on', false);\r\n    RETURN 'Permission logging enabled for this session.';\r\nEND;\r\n$function$\n"
   },
   {
-    "object_type": "RLS",
+    "object_type": "FUNCTION",
     "schema_name": "work",
-    "object_name": "dispute_evidence",
-    "definition": "ALTER TABLE work.dispute_evidence ENABLE ROW LEVEL SECURITY;"
+    "object_name": "fail_event",
+    "definition": "CREATE OR REPLACE FUNCTION work.fail_event(p_idempotency_key uuid, p_error text)\n RETURNS void\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    UPDATE work.event_outbox\r\n    SET status = 'pending',\r\n        last_error = p_error,\r\n        retry_count = retry_count + 1,\r\n        locked_until = NULL,\r\n        processed_by = NULL\r\n    WHERE idempotency_key = p_idempotency_key;\r\nEND;\r\n$function$\n"
   },
   {
-    "object_type": "RLS",
+    "object_type": "FUNCTION",
     "schema_name": "work",
-    "object_name": "dispute_hearings",
-    "definition": "ALTER TABLE work.dispute_hearings ENABLE ROW LEVEL SECURITY;"
+    "object_name": "log_permission_evaluation",
+    "definition": "CREATE OR REPLACE FUNCTION work.log_permission_evaluation(p_entity_id uuid, p_contract_id uuid, p_permission work.permission_type, p_result boolean, p_matched_policy_ids uuid[], p_matched_rule_type text, p_applied_policy_id uuid, p_priority_applied integer, p_details jsonb)\n RETURNS void\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    -- فقط إذا كان متغير الجلسة 'work.log_permissions' = 'on'\r\n    IF current_setting('work.log_permissions', true) = 'on' THEN\r\n        INSERT INTO work.permission_evaluation_log (\r\n            entity_id, contract_id, permission, result,\r\n            matched_policy_ids, matched_rule_type, applied_policy_id,\r\n            priority_applied, evaluation_details, triggered_by_setting\r\n        ) VALUES (\r\n            p_entity_id, p_contract_id, p_permission, p_result,\r\n            p_matched_policy_ids, p_matched_rule_type, p_applied_policy_id,\r\n            p_priority_applied, p_details, 'on'\r\n        );\r\n    END IF;\r\nEND;\r\n$function$\n"
   },
   {
-    "object_type": "RLS",
+    "object_type": "FUNCTION",
     "schema_name": "work",
-    "object_name": "dispute_resolution_actions",
-    "definition": "ALTER TABLE work.dispute_resolution_actions ENABLE ROW LEVEL SECURITY;"
+    "object_name": "notify_dispute_event",
+    "definition": "CREATE OR REPLACE FUNCTION work.notify_dispute_event()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    INSERT INTO work.event_outbox (\r\n        idempotency_key, event_type, entity_type, entity_id, payload, status\r\n    ) VALUES (\r\n        gen_random_uuid(),\r\n        CASE TG_OP\r\n            WHEN 'INSERT' THEN 'dispute.created'\r\n            WHEN 'UPDATE' THEN 'dispute.updated'\r\n        END,\r\n        'dispute',\r\n        NEW.id,\r\n        jsonb_build_object(\r\n            'dispute_id', NEW.id,\r\n            'contract_id', NEW.contract_id,\r\n            'status', NEW.status,\r\n            'dispute_type', NEW.dispute_type,\r\n            'raised_by', NEW.raised_by_entity_id,\r\n            'against', NEW.against_entity_id\r\n        ),\r\n        'pending'\r\n    );\r\n    RETURN NEW;\r\nEND;\r\n$function$\n"
   },
   {
-    "object_type": "RLS",
+    "object_type": "FUNCTION",
     "schema_name": "work",
-    "object_name": "event_outbox",
-    "definition": "ALTER TABLE work.event_outbox ENABLE ROW LEVEL SECURITY;"
+    "object_name": "propagate_ownership_transfer_event",
+    "definition": "CREATE OR REPLACE FUNCTION work.propagate_ownership_transfer_event()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    IF (TG_OP = 'INSERT' AND NEW.apply_effects = true) OR\r\n       (TG_OP = 'UPDATE' AND NEW.applied_at IS DISTINCT FROM OLD.applied_at AND NEW.applied_at IS NOT NULL) THEN\r\n       \r\n       INSERT INTO work.event_outbox (\r\n           idempotency_key, event_type, entity_type, entity_id, payload, status\r\n       ) VALUES (\r\n           gen_random_uuid(),\r\n           'ownership.transferred',\r\n           'contract',\r\n           NEW.contract_id,\r\n           jsonb_build_object(\r\n               'transfer_id', NEW.id,\r\n               'from_entity_id', NEW.from_entity_id,\r\n               'to_entity_id', NEW.to_entity_id,\r\n               'transfer_scope', NEW.transfer_scope,\r\n               'percentage', NEW.percentage,\r\n               'effective_at', NEW.effective_at\r\n           ),\r\n           'pending'\r\n       );\r\n    END IF;\r\n    RETURN NEW;\r\nEND;\r\n$function$\n"
   },
   {
-    "object_type": "RLS",
+    "object_type": "FUNCTION",
     "schema_name": "work",
-    "object_name": "event_outbox_processed",
-    "definition": "ALTER TABLE work.event_outbox_processed ENABLE ROW LEVEL SECURITY;"
+    "object_name": "transition_entity_state",
+    "definition": "CREATE OR REPLACE FUNCTION work.transition_entity_state(p_entity_type work.entity_type_enum, p_entity_id uuid, p_new_state text, p_triggered_by_entity_id uuid DEFAULT NULL::uuid, p_metadata jsonb DEFAULT NULL::jsonb)\n RETURNS boolean\n LANGUAGE plpgsql\nAS $function$\r\nDECLARE\r\n    v_old_state text;\r\n    v_table_name text;\r\nBEGIN\r\n    CASE p_entity_type\r\n        WHEN 'contract' THEN\r\n            v_table_name := 'contracts';\r\n            SELECT status::text INTO v_old_state FROM work.contracts WHERE id = p_entity_id;\r\n        WHEN 'execution_unit' THEN\r\n            v_table_name := 'work_execution_units';\r\n            SELECT status::text INTO v_old_state FROM work.work_execution_units WHERE id = p_entity_id;\r\n        WHEN 'approval' THEN\r\n            v_table_name := 'contract_approvals';\r\n            SELECT status::text INTO v_old_state FROM work.contract_approvals WHERE id = p_entity_id;\r\n        ELSE\r\n            RETURN false;\r\n    END CASE;\r\n    \r\n    IF NOT FOUND THEN\r\n        RETURN false;\r\n    END IF;\r\n    \r\n    IF NOT work.can_transition(p_entity_type, v_old_state, p_new_state, p_entity_id) THEN\r\n        RETURN false;\r\n    END IF;\r\n    \r\n    EXECUTE format('UPDATE work.%I SET status = $1, updated_at = now() WHERE id = $2', v_table_name)\r\n    USING p_new_state, p_entity_id;\r\n    \r\n    INSERT INTO work.state_transition_history (\r\n        entity_type, entity_id, from_state, to_state, triggered_by_entity_id, metadata, created_at\r\n    ) VALUES (\r\n        p_entity_type, p_entity_id, v_old_state, p_new_state, p_triggered_by_entity_id, p_metadata, now()\r\n    );\r\n    \r\n    INSERT INTO work.event_outbox (\r\n        idempotency_key, event_type, entity_type, entity_id, payload, status\r\n    ) VALUES (\r\n        gen_random_uuid(),\r\n        'state.changed',\r\n        p_entity_type::text,\r\n        p_entity_id,\r\n        jsonb_build_object('old_state', v_old_state, 'new_state', p_new_state, 'triggered_by', p_triggered_by_entity_id),\r\n        'pending'\r\n    );\r\n    \r\n    RETURN true;\r\nEND;\r\n$function$\n"
   },
   {
-    "object_type": "RLS",
+    "object_type": "FUNCTION",
     "schema_name": "work",
-    "object_name": "execution_logs",
-    "definition": "ALTER TABLE work.execution_logs ENABLE ROW LEVEL SECURITY;"
+    "object_name": "update_contract_dispute_flag",
+    "definition": "CREATE OR REPLACE FUNCTION work.update_contract_dispute_flag()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    UPDATE work.contracts\r\n    SET has_open_dispute = EXISTS (\r\n        SELECT 1 FROM work.dispute_cases\r\n        WHERE contract_id = NEW.contract_id\r\n          AND status NOT IN ('resolved', 'rejected')\r\n    )\r\n    WHERE id = NEW.contract_id;\r\n    RETURN NEW;\r\nEND;\r\n$function$\n"
   },
   {
-    "object_type": "RLS",
+    "object_type": "FUNCTION",
     "schema_name": "work",
-    "object_name": "permission_evaluation_log",
-    "definition": "ALTER TABLE work.permission_evaluation_log ENABLE ROW LEVEL SECURITY;"
-  },
-  {
-    "object_type": "RLS",
-    "schema_name": "work",
-    "object_name": "permission_policies",
-    "definition": "ALTER TABLE work.permission_policies ENABLE ROW LEVEL SECURITY;"
-  },
-  {
-    "object_type": "RLS",
-    "schema_name": "work",
-    "object_name": "policy_assignments",
-    "definition": "ALTER TABLE work.policy_assignments ENABLE ROW LEVEL SECURITY;"
-  },
-  {
-    "object_type": "RLS",
-    "schema_name": "work",
-    "object_name": "policy_conditions",
-    "definition": "ALTER TABLE work.policy_conditions ENABLE ROW LEVEL SECURITY;"
-  },
-  {
-    "object_type": "RLS",
-    "schema_name": "work",
-    "object_name": "state_machines",
-    "definition": "ALTER TABLE work.state_machines ENABLE ROW LEVEL SECURITY;"
-  },
-  {
-    "object_type": "RLS",
-    "schema_name": "work",
-    "object_name": "state_transition_history",
-    "definition": "ALTER TABLE work.state_transition_history ENABLE ROW LEVEL SECURITY;"
-  },
-  {
-    "object_type": "RLS",
-    "schema_name": "work",
-    "object_name": "state_transition_rules",
-    "definition": "ALTER TABLE work.state_transition_rules ENABLE ROW LEVEL SECURITY;"
-  },
-  {
-    "object_type": "RLS",
-    "schema_name": "work",
-    "object_name": "work_contract_versions",
-    "definition": "ALTER TABLE work.work_contract_versions ENABLE ROW LEVEL SECURITY;"
-  },
-  {
-    "object_type": "RLS",
-    "schema_name": "work",
-    "object_name": "work_execution_units",
-    "definition": "ALTER TABLE work.work_execution_units ENABLE ROW LEVEL SECURITY;"
-  },
-  {
-    "object_type": "RLS",
-    "schema_name": "work",
-    "object_name": "work_financial_routes",
-    "definition": "ALTER TABLE work.work_financial_routes ENABLE ROW LEVEL SECURITY;"
-  },
-  {
-    "object_type": "RLS",
-    "schema_name": "work",
-    "object_name": "work_ownership_transfers",
-    "definition": "ALTER TABLE work.work_ownership_transfers ENABLE ROW LEVEL SECURITY;"
-  },
-  {
-    "object_type": "RLS",
-    "schema_name": "work",
-    "object_name": "work_visibility",
-    "definition": "ALTER TABLE work.work_visibility ENABLE ROW LEVEL SECURITY;"
-  },
-  {
-    "object_type": "TABLE",
-    "schema_name": "work",
-    "object_name": "approval_step_assignees",
-    "definition": "id uuid,\nworkflow_step_id uuid,\nentity_id uuid,\nrole_in_step text,\nweight integer,\ncreated_at timestamp with time zone"
-  },
-  {
-    "object_type": "TABLE",
-    "schema_name": "work",
-    "object_name": "approval_workflow_steps",
-    "definition": "id uuid,\nworkflow_template_id uuid,\nstep_order integer,\nname text,\ndescription text,\nstep_type text,\ncondition jsonb,\nquorum_count integer,\ncompletion_policy text,\ntimeout_hours integer,\nis_mandatory boolean,\nmetadata jsonb,\ncreated_at timestamp with time zone"
-  },
-  {
-    "object_type": "TABLE",
-    "schema_name": "work",
-    "object_name": "approval_workflow_templates",
-    "definition": "id uuid,\nname text,\ndescription text,\ntarget_type text,\napplicable_approval_types ARRAY,\nis_default boolean,\nmetadata jsonb,\ncreated_at timestamp with time zone"
-  },
-  {
-    "object_type": "TABLE",
-    "schema_name": "work",
-    "object_name": "contract_approval_workflows",
-    "definition": "id uuid,\ncontract_id uuid,\nworkflow_template_id uuid,\nstatus text,\ncurrent_step_index integer,\nstarted_at timestamp with time zone,\ncompleted_at timestamp with time zone,\nmetadata jsonb"
-  },
-  {
-    "object_type": "TABLE",
-    "schema_name": "work",
-    "object_name": "contract_approvals",
-    "definition": "id uuid,\ncontract_id uuid,\nrequested_by_entity_id uuid,\nrequested_from_entity_id uuid,\napproval_type USER-DEFINED,\nstatus USER-DEFINED,\napproved_at timestamp with time zone,\nrejected_at timestamp with time zone,\nmetadata jsonb,\ncreated_at timestamp with time zone,\nupdated_at timestamp with time zone,\nworkflow_id uuid,\nworkflow_step_id uuid,\nstep_order integer,\napproval_snapshot jsonb,\nstep_name text,\nstep_order_snapshot integer"
-  },
-  {
-    "object_type": "TABLE",
-    "schema_name": "work",
-    "object_name": "contract_links",
-    "definition": "id uuid,\nparent_contract_id uuid,\nchild_contract_id uuid,\nlink_type USER-DEFINED,\nmetadata jsonb,\ncreated_at timestamp with time zone"
-  },
-  {
-    "object_type": "TABLE",
-    "schema_name": "work",
-    "object_name": "contract_messages",
-    "definition": "id uuid,\ncontract_id uuid,\nsender_entity_id uuid,\nmessage_type USER-DEFINED,\nbody text,\nmetadata jsonb,\ncreated_at timestamp with time zone"
-  },
-  {
-    "object_type": "TABLE",
-    "schema_name": "work",
-    "object_name": "contract_ownership_history",
-    "definition": "id uuid,\ncontract_id uuid,\nowner_entity_id uuid,\ntransfer_id uuid,\nstarted_at timestamp with time zone,\nended_at timestamp with time zone,\ncreated_at timestamp with time zone,\nupdated_at timestamp with time zone"
-  },
-  {
-    "object_type": "TABLE",
-    "schema_name": "work",
-    "object_name": "contract_participants",
-    "definition": "id uuid,\ncontract_id uuid,\nentity_id uuid,\nrole USER-DEFINED,\nparticipation_mode USER-DEFINED,\nvisibility_scope USER-DEFINED,\nfinancial_role USER-DEFINED,\nexecution_role USER-DEFINED,\nparent_participant_id uuid,\nallocation_percent numeric,\nstatus USER-DEFINED,\njoined_at timestamp with time zone,\nleft_at timestamp with time zone,\nmetadata jsonb,\ncreated_at timestamp with time zone,\nupdated_at timestamp with time zone"
-  },
-  {
-    "object_type": "TABLE",
-    "schema_name": "work",
-    "object_name": "contract_permissions",
-    "definition": "id uuid,\ncontract_id uuid,\nentity_id uuid,\npermission USER-DEFINED,\ngranted_by_entity_id uuid,\ncreated_at timestamp with time zone"
-  },
-  {
-    "object_type": "TABLE",
-    "schema_name": "work",
-    "object_name": "contracts",
-    "definition": "id uuid,\nproject_id uuid,\ntask_id uuid,\ntitle text,\ndescription text,\nstatus USER-DEFINED,\nasset_code text,\ntotal_amount numeric,\ncurrent_version_no integer,\ncreated_by_entity_id uuid,\nowned_by_entity_id uuid,\nvisibility_mode USER-DEFINED,\nstarted_at timestamp with time zone,\ncompleted_at timestamp with time zone,\ncancelled_at timestamp with time zone,\nmetadata jsonb,\ncreated_at timestamp with time zone,\nupdated_at timestamp with time zone,\nsearch_vector tsvector,\nhas_open_dispute boolean"
-  },
-  {
-    "object_type": "TABLE",
-    "schema_name": "work",
-    "object_name": "dispute_cases",
-    "definition": "id uuid,\ncontract_id uuid,\nexecution_unit_id uuid,\napproval_id uuid,\ndispute_type USER-DEFINED,\nstatus USER-DEFINED,\nraised_by_entity_id uuid,\nagainst_entity_id uuid,\nraised_at timestamp with time zone,\ntitle text,\ndescription text,\nclaimed_amount numeric,\nrequested_action text,\nresolved_at timestamp with time zone,\nresolution_summary text,\nresolved_by_entity_id uuid,\nmetadata jsonb,\ncreated_at timestamp with time zone,\nupdated_at timestamp with time zone"
-  },
-  {
-    "object_type": "TABLE",
-    "schema_name": "work",
-    "object_name": "dispute_evidence",
-    "definition": "id uuid,\ndispute_id uuid,\nsubmitted_by_entity_id uuid,\nevidence_type text,\ntitle text,\ndescription text,\nfile_url text,\ncontent_hash text,\nmetadata jsonb,\nsubmitted_at timestamp with time zone"
-  },
-  {
-    "object_type": "TABLE",
-    "schema_name": "work",
-    "object_name": "dispute_hearings",
-    "definition": "id uuid,\ndispute_id uuid,\nhearing_date timestamp with time zone,\nlocation text,\nis_online boolean,\nmeeting_link text,\ndecision text,\nnotes text,\ncreated_at timestamp with time zone"
-  },
-  {
-    "object_type": "TABLE",
-    "schema_name": "work",
-    "object_name": "dispute_resolution_actions",
-    "definition": "id uuid,\ndispute_id uuid,\naction_type text,\ndescription text,\napplied boolean,\napplied_at timestamp with time zone,\nmetadata jsonb"
-  },
-  {
-    "object_type": "TABLE",
-    "schema_name": "work",
-    "object_name": "event_outbox",
-    "definition": "id uuid,\nevent_type text,\nentity_type text,\nentity_id uuid,\npayload jsonb,\nstatus text,\nretry_count integer,\nlast_error text,\ncreated_at timestamp with time zone,\nprocessed_at timestamp with time zone,\nrouting_key text,\ntarget_services ARRAY,\nidempotency_key uuid,\nevent_version integer,\nprocessed_by text,\nlocked_until timestamp with time zone"
-  },
-  {
-    "object_type": "TABLE",
-    "schema_name": "work",
-    "object_name": "event_outbox_processed",
-    "definition": "idempotency_key uuid,\nevent_type text,\nentity_type text,\nentity_id uuid,\nservice_name text,\nprocessed_at timestamp with time zone,\nresult text,\nmetadata jsonb"
-  },
-  {
-    "object_type": "TABLE",
-    "schema_name": "work",
-    "object_name": "execution_logs",
-    "definition": "id uuid,\ncontract_id uuid,\nperformed_by_entity_id uuid,\nevent_type USER-DEFINED,\ncreated_at timestamp with time zone,\ntarget_entity_type text,\ntarget_entity_id uuid,\nold_state jsonb,\nnew_state jsonb,\nidempotency_key uuid"
-  },
-  {
-    "object_type": "TABLE",
-    "schema_name": "work",
-    "object_name": "permission_evaluation_log",
-    "definition": "id uuid,\nentity_id uuid,\ncontract_id uuid,\npermission USER-DEFINED,\nevaluated_at timestamp with time zone,\nresult boolean,\nmatched_policy_ids ARRAY,\nmatched_rule_type text,\napplied_policy_id uuid,\npriority_applied integer,\nevaluation_details jsonb,\ntriggered_by_setting text"
-  },
-  {
-    "object_type": "TABLE",
-    "schema_name": "work",
-    "object_name": "permission_policies",
-    "definition": "id uuid,\nname text,\ndescription text,\npermission_type USER-DEFINED,\npriority integer,\neffect text,\nenabled boolean,\nmetadata jsonb"
-  },
-  {
-    "object_type": "TABLE",
-    "schema_name": "work",
-    "object_name": "policy_assignments",
-    "definition": "id uuid,\npolicy_id uuid,\nentity_id uuid,\nrole USER-DEFINED,\ncondition_expression jsonb"
-  },
-  {
-    "object_type": "TABLE",
-    "schema_name": "work",
-    "object_name": "policy_conditions",
-    "definition": "id uuid,\npolicy_id uuid,\nattribute_path text,\noperator text,\nvalue jsonb,\ncreated_at timestamp with time zone"
-  },
-  {
-    "object_type": "TABLE",
-    "schema_name": "work",
-    "object_name": "state_machines",
-    "definition": "id uuid,\nentity_type USER-DEFINED,\nname text,\ndescription text,\ncreated_at timestamp with time zone"
-  },
-  {
-    "object_type": "TABLE",
-    "schema_name": "work",
-    "object_name": "state_transition_history",
-    "definition": "id uuid,\nentity_type USER-DEFINED,\nentity_id uuid,\nfrom_state text,\nto_state text,\ntriggered_by_entity_id uuid,\nmetadata jsonb,\ncreated_at timestamp with time zone"
-  },
-  {
-    "object_type": "TABLE",
-    "schema_name": "work",
-    "object_name": "state_transition_rules",
-    "definition": "id uuid,\nentity_type USER-DEFINED,\nfrom_state text,\nto_state text,\ncondition jsonb,\naction text,\npriority integer,\ncreated_at timestamp with time zone"
-  },
-  {
-    "object_type": "TABLE",
-    "schema_name": "work",
-    "object_name": "work_contract_versions",
-    "definition": "id uuid,\ncontract_id uuid,\nversion_no integer,\nsnapshot jsonb,\ncreated_by_entity_id uuid,\ncreated_at timestamp with time zone"
-  },
-  {
-    "object_type": "TABLE",
-    "schema_name": "work",
-    "object_name": "work_execution_units",
-    "definition": "id uuid,\ncontract_id uuid,\nparent_unit_id uuid,\ntitle text,\ndescription text,\nassigned_entity_id uuid,\nstatus USER-DEFINED,\nprogress_percent numeric,\nallocated_amount numeric,\nstart_at timestamp with time zone,\ncompleted_at timestamp with time zone,\nmetadata jsonb,\ncreated_at timestamp with time zone,\nupdated_at timestamp with time zone,\nsequence_no integer,\nunit_type USER-DEFINED,\nassigned_by_entity_id uuid,\nis_milestone boolean,\nmilestone_amount numeric"
-  },
-  {
-    "object_type": "TABLE",
-    "schema_name": "work",
-    "object_name": "work_financial_routes",
-    "definition": "id uuid,\ncontract_id uuid,\npayer_entity_id uuid,\npayee_entity_id uuid,\nbeneficiary_type USER-DEFINED,\namount numeric,\npercentage numeric,\npriority integer,\nis_hidden boolean,\nmetadata jsonb,\ncreated_at timestamp with time zone"
-  },
-  {
-    "object_type": "TABLE",
-    "schema_name": "work",
-    "object_name": "work_ownership_transfers",
-    "definition": "id uuid,\ncontract_id uuid,\nfrom_entity_id uuid,\nto_entity_id uuid,\ntransfer_type USER-DEFINED,\ntransfer_scope USER-DEFINED,\nnotes text,\neffective_at timestamp with time zone,\ncreated_at timestamp with time zone,\npercentage numeric,\nupdated_at timestamp with time zone,\napplied_at timestamp with time zone,\npropagation_status text,\napply_effects boolean"
-  },
-  {
-    "object_type": "TABLE",
-    "schema_name": "work",
-    "object_name": "work_visibility",
-    "definition": "id uuid,\ncontract_id uuid,\nviewer_entity_id uuid,\nvisible_entity_id uuid,\nvisibility_type USER-DEFINED,\ncreated_at timestamp with time zone,\nmetadata jsonb"
+    "object_name": "update_updated_at_column",
+    "definition": "CREATE OR REPLACE FUNCTION work.update_updated_at_column()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    NEW.updated_at = now();\r\n    RETURN NEW;\r\nEND;\r\n$function$\n"
   },
   {
     "object_type": "TRIGGER",
@@ -2446,5 +2392,59 @@
     "schema_name": "work",
     "object_name": "trigger_work_ownership_transfers_updated_at",
     "definition": "CREATE TRIGGER trigger_work_ownership_transfers_updated_at BEFORE UPDATE ON work.work_ownership_transfers FOR EACH ROW EXECUTE FUNCTION work.update_updated_at_column();"
+  },
+  {
+    "object_type": "COMMENT",
+    "schema_name": "work",
+    "object_name": "idx_contract_participants_lookup",
+    "definition": "COMMENT ON TABLE work.idx_contract_participants_lookup IS 'Accelerates role resolution for permission checks (active participants only).';"
+  },
+  {
+    "object_type": "COMMENT",
+    "schema_name": "work",
+    "object_name": "idx_contract_permissions_entity",
+    "definition": "COMMENT ON TABLE work.idx_contract_permissions_entity IS 'Used by check_contract_permission for direct RBAC lookups.';"
+  },
+  {
+    "object_type": "COMMENT",
+    "schema_name": "work",
+    "object_name": "permission_evaluation_log",
+    "definition": "COMMENT ON TABLE work.permission_evaluation_log IS 'Audit log for permission evaluation to resolve ambiguity between direct entity and role-based policies.';"
+  },
+  {
+    "object_type": "COLUMN COMMENT",
+    "schema_name": "work",
+    "object_name": "work_financial_routes.beneficiary_type",
+    "definition": "COMMENT ON COLUMN work.work_financial_routes.beneficiary_type IS 'Determines who receives the money: \"payer\", \"payee\", \"both\", \"platform\".';"
+  },
+  {
+    "object_type": "EXTENSION",
+    "schema_name": "extensions",
+    "object_name": "pg_stat_statements",
+    "definition": "CREATE EXTENSION IF NOT EXISTS pg_stat_statements;"
+  },
+  {
+    "object_type": "EXTENSION",
+    "schema_name": "extensions",
+    "object_name": "pgcrypto",
+    "definition": "CREATE EXTENSION IF NOT EXISTS pgcrypto;"
+  },
+  {
+    "object_type": "EXTENSION",
+    "schema_name": "pg_catalog",
+    "object_name": "plpgsql",
+    "definition": "CREATE EXTENSION IF NOT EXISTS plpgsql;"
+  },
+  {
+    "object_type": "EXTENSION",
+    "schema_name": "vault",
+    "object_name": "supabase_vault",
+    "definition": "CREATE EXTENSION IF NOT EXISTS supabase_vault;"
+  },
+  {
+    "object_type": "EXTENSION",
+    "schema_name": "extensions",
+    "object_name": "uuid-ossp",
+    "definition": "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"
   }
 ]
