@@ -5,7 +5,7 @@
     "data": {
       "schema": "app_rewards",
       "version": "1.0.0",
-      "exported_at": "2026-05-13T19:46:57.719945+00:00",
+      "exported_at": "2026-05-13T20:02:21.271974+00:00",
       "module_name": "rewards_engine",
       "business_purpose": "Reward management and processing"
     }
@@ -20,6 +20,102 @@
     "sort_order": 2,
     "data": [
       {
+        "name": "processing_log",
+        "schema": "app_rewards",
+        "columns": [
+          {
+            "name": "id",
+            "type": "uuid",
+            "default": "gen_random_uuid()",
+            "nullable": false,
+            "is_identity": false
+          },
+          {
+            "name": "event_id",
+            "type": "uuid",
+            "default": null,
+            "nullable": false,
+            "is_identity": false
+          },
+          {
+            "name": "step",
+            "type": "text",
+            "default": null,
+            "nullable": false,
+            "is_identity": false
+          },
+          {
+            "name": "status",
+            "type": "text",
+            "default": null,
+            "nullable": false,
+            "is_identity": false
+          },
+          {
+            "name": "details",
+            "type": "jsonb",
+            "default": null,
+            "nullable": true,
+            "is_identity": false
+          },
+          {
+            "name": "error_message",
+            "type": "text",
+            "default": null,
+            "nullable": true,
+            "is_identity": false
+          },
+          {
+            "name": "trace_id",
+            "type": "uuid",
+            "default": null,
+            "nullable": true,
+            "is_identity": false
+          },
+          {
+            "name": "created_at",
+            "type": "timestamp with time zone",
+            "default": "now()",
+            "nullable": true,
+            "is_identity": false
+          }
+        ],
+        "indexes": [
+          {
+            "name": "idx_processing_log_event",
+            "unique": false,
+            "definition": "CREATE INDEX idx_processing_log_event ON app_rewards.processing_log USING btree (event_id, created_at)"
+          },
+          {
+            "name": "idx_processing_log_trace",
+            "unique": false,
+            "definition": "CREATE INDEX idx_processing_log_trace ON app_rewards.processing_log USING btree (trace_id)"
+          }
+        ],
+        "raw_sql": "CREATE TABLE app_rewards.processing_log (\\n    id uuid NOT NULL DEFAULT gen_random_uuid(),\n    event_id uuid NOT NULL,\n    step text NOT NULL,\n    status text NOT NULL,\n    details jsonb,\n    error_message text,\n    trace_id uuid,\n    created_at timestamp with time zone DEFAULT now(),\n    CONSTRAINT processing_log_pkey PRIMARY KEY (id)\\n);",
+        "primary_key": [
+          "id"
+        ],
+        "foreign_keys": [
+          {
+            "name": "processing_log_event_id_fkey",
+            "columns": [
+              "event_id"
+            ],
+            "on_delete": "CASCADE",
+            "on_update": "",
+            "ref_table": "reward_events",
+            "ref_schema": "app_rewards",
+            "ref_columns": [
+              "id"
+            ]
+          }
+        ],
+        "business_purpose": null,
+        "check_constraints": null,
+        "unique_constraints": null
+      },
+      {
         "name": "reward_events",
         "schema": "app_rewards",
         "columns": [
@@ -31,7 +127,7 @@
             "is_identity": false
           },
           {
-            "name": "user_id",
+            "name": "internal_user_id",
             "type": "uuid",
             "default": null,
             "nullable": false,
@@ -113,6 +209,13 @@
             "default": null,
             "nullable": true,
             "is_identity": false
+          },
+          {
+            "name": "dead_letter_category",
+            "type": "text",
+            "default": null,
+            "nullable": true,
+            "is_identity": false
           }
         ],
         "indexes": [
@@ -120,6 +223,11 @@
             "name": "idx_reward_events_created_at",
             "unique": false,
             "definition": "CREATE INDEX idx_reward_events_created_at ON app_rewards.reward_events USING btree (created_at DESC)"
+          },
+          {
+            "name": "idx_reward_events_dead_letter",
+            "unique": false,
+            "definition": "CREATE INDEX idx_reward_events_dead_letter ON app_rewards.reward_events USING btree (status, dead_letter_category) WHERE (status = 'dead_letter'::text)"
           },
           {
             "name": "idx_reward_events_event_id",
@@ -149,10 +257,10 @@
           {
             "name": "idx_reward_events_user_status",
             "unique": false,
-            "definition": "CREATE INDEX idx_reward_events_user_status ON app_rewards.reward_events USING btree (user_id, status)"
+            "definition": "CREATE INDEX idx_reward_events_user_status ON app_rewards.reward_events USING btree (internal_user_id, status)"
           }
         ],
-        "raw_sql": "CREATE TABLE app_rewards.reward_events (\\n    id uuid NOT NULL DEFAULT gen_random_uuid(),\n    user_id uuid NOT NULL,\n    payload jsonb,\n    created_at timestamp with time zone DEFAULT now(),\n    metadata jsonb,\n    status text DEFAULT 'pending'::text,\n    retry_count integer DEFAULT 0,\n    last_error text,\n    completed_at timestamp with time zone,\n    next_retry_at timestamp with time zone,\n    max_retries integer DEFAULT 3,\n    event_id uuid NOT NULL,\n    dead_letter_reason text,\n    CONSTRAINT reward_events_pkey PRIMARY KEY (id)\\n);",
+        "raw_sql": "CREATE TABLE app_rewards.reward_events (\\n    id uuid NOT NULL DEFAULT gen_random_uuid(),\n    internal_user_id uuid NOT NULL,\n    payload jsonb,\n    created_at timestamp with time zone DEFAULT now(),\n    metadata jsonb,\n    status text DEFAULT 'pending'::text,\n    retry_count integer DEFAULT 0,\n    last_error text,\n    completed_at timestamp with time zone,\n    next_retry_at timestamp with time zone,\n    max_retries integer DEFAULT 3,\n    event_id uuid NOT NULL,\n    dead_letter_reason text,\n    dead_letter_category text,\n    CONSTRAINT reward_events_pkey PRIMARY KEY (id)\\n);",
         "primary_key": [
           "id"
         ],
@@ -171,9 +279,9 @@
             ]
           },
           {
-            "name": "fk_reward_events_user",
+            "name": "reward_events_internal_user_id_fkey",
             "columns": [
-              "user_id"
+              "internal_user_id"
             ],
             "on_delete": "CASCADE",
             "on_update": "",
@@ -708,7 +816,7 @@
             "is_identity": false
           },
           {
-            "name": "user_id",
+            "name": "internal_user_id",
             "type": "uuid",
             "default": null,
             "nullable": false,
@@ -865,7 +973,7 @@
           {
             "name": "idx_reward_tx_user",
             "unique": false,
-            "definition": "CREATE INDEX idx_reward_tx_user ON app_rewards.reward_transactions USING btree (user_id)"
+            "definition": "CREATE INDEX idx_reward_tx_user ON app_rewards.reward_transactions USING btree (internal_user_id)"
           },
           {
             "name": "idx_reward_tx_wallet_pending",
@@ -880,10 +988,10 @@
           {
             "name": "uq_reward_work",
             "unique": true,
-            "definition": "CREATE UNIQUE INDEX uq_reward_work ON app_rewards.reward_transactions USING btree (user_id, event_id, rule_id, reward_type)"
+            "definition": "CREATE UNIQUE INDEX uq_reward_work ON app_rewards.reward_transactions USING btree (internal_user_id, event_id, rule_id, reward_type)"
           }
         ],
-        "raw_sql": "CREATE TABLE app_rewards.reward_transactions (\\n    id uuid NOT NULL DEFAULT gen_random_uuid(),\n    user_id uuid NOT NULL,\n    rule_id uuid,\n    reward_type text NOT NULL,\n    amount numeric,\n    value text,\n    status text NOT NULL DEFAULT 'granted'::text,\n    idempotency_key text NOT NULL,\n    created_at timestamp with time zone DEFAULT now(),\n    metadata jsonb,\n    earned_at timestamp with time zone DEFAULT now(),\n    asset_code text,\n    source_type text,\n    source_id uuid,\n    wallet_transaction_id uuid,\n    rule_snapshot jsonb,\n    wallet_confirmed boolean DEFAULT false,\n    wallet_confirmed_at timestamp with time zone,\n    wallet_failure_reason text,\n    event_id uuid NOT NULL,\n    CONSTRAINT reward_transactions_pkey PRIMARY KEY (id)\\n);",
+        "raw_sql": "CREATE TABLE app_rewards.reward_transactions (\\n    id uuid NOT NULL DEFAULT gen_random_uuid(),\n    internal_user_id uuid NOT NULL,\n    rule_id uuid,\n    reward_type text NOT NULL,\n    amount numeric,\n    value text,\n    status text NOT NULL DEFAULT 'granted'::text,\n    idempotency_key text NOT NULL,\n    created_at timestamp with time zone DEFAULT now(),\n    metadata jsonb,\n    earned_at timestamp with time zone DEFAULT now(),\n    asset_code text,\n    source_type text,\n    source_id uuid,\n    wallet_transaction_id uuid,\n    rule_snapshot jsonb,\n    wallet_confirmed boolean DEFAULT false,\n    wallet_confirmed_at timestamp with time zone,\n    wallet_failure_reason text,\n    event_id uuid NOT NULL,\n    CONSTRAINT reward_transactions_pkey PRIMARY KEY (id)\\n);",
         "primary_key": [
           "id"
         ],
@@ -915,9 +1023,9 @@
             ]
           },
           {
-            "name": "fk_reward_transactions_user",
+            "name": "reward_transactions_internal_user_id_fkey",
             "columns": [
-              "user_id"
+              "internal_user_id"
             ],
             "on_delete": "CASCADE",
             "on_update": "",
@@ -949,7 +1057,7 @@
           {
             "name": "uq_reward_work",
             "columns": [
-              "user_id",
+              "internal_user_id",
               "rule_id",
               "reward_type",
               "event_id"
@@ -996,8 +1104,8 @@
             "type": "timestamp with time zone"
           }
         ],
-        "raw_sql": "CREATE VIEW app_rewards.reward_ledger_view AS  SELECT user_id,\n    asset_code,\n    sum(\n        CASE\n            WHEN ((status = 'granted'::text) AND (reward_type = 'point'::text)) THEN amount\n            ELSE (0)::numeric\n        END) AS total_points,\n    sum(\n        CASE\n            WHEN ((status = 'granted'::text) AND (reward_type = 'cashback'::text)) THEN amount\n            ELSE (0)::numeric\n        END) AS total_cashback,\n    count(*) FILTER (WHERE (reward_type = 'badge'::text)) AS badges_count,\n    count(*) FILTER (WHERE (reward_type = 'discount'::text)) AS discounts_count,\n    max(earned_at) AS last_earned_at\n   FROM app_rewards.reward_transactions\n  GROUP BY user_id, asset_code;;",
-        "definition": " SELECT user_id,\n    asset_code,\n    sum(\n        CASE\n            WHEN ((status = 'granted'::text) AND (reward_type = 'point'::text)) THEN amount\n            ELSE (0)::numeric\n        END) AS total_points,\n    sum(\n        CASE\n            WHEN ((status = 'granted'::text) AND (reward_type = 'cashback'::text)) THEN amount\n            ELSE (0)::numeric\n        END) AS total_cashback,\n    count(*) FILTER (WHERE (reward_type = 'badge'::text)) AS badges_count,\n    count(*) FILTER (WHERE (reward_type = 'discount'::text)) AS discounts_count,\n    max(earned_at) AS last_earned_at\n   FROM app_rewards.reward_transactions\n  GROUP BY user_id, asset_code;"
+        "raw_sql": "CREATE VIEW app_rewards.reward_ledger_view AS  SELECT internal_user_id AS user_id,\n    asset_code,\n    sum(\n        CASE\n            WHEN ((status = 'granted'::text) AND (reward_type = 'point'::text)) THEN amount\n            ELSE (0)::numeric\n        END) AS total_points,\n    sum(\n        CASE\n            WHEN ((status = 'granted'::text) AND (reward_type = 'cashback'::text)) THEN amount\n            ELSE (0)::numeric\n        END) AS total_cashback,\n    count(*) FILTER (WHERE (reward_type = 'badge'::text)) AS badges_count,\n    count(*) FILTER (WHERE (reward_type = 'discount'::text)) AS discounts_count,\n    max(earned_at) AS last_earned_at\n   FROM app_rewards.reward_transactions\n  GROUP BY internal_user_id, asset_code;;",
+        "definition": " SELECT internal_user_id AS user_id,\n    asset_code,\n    sum(\n        CASE\n            WHEN ((status = 'granted'::text) AND (reward_type = 'point'::text)) THEN amount\n            ELSE (0)::numeric\n        END) AS total_points,\n    sum(\n        CASE\n            WHEN ((status = 'granted'::text) AND (reward_type = 'cashback'::text)) THEN amount\n            ELSE (0)::numeric\n        END) AS total_cashback,\n    count(*) FILTER (WHERE (reward_type = 'badge'::text)) AS badges_count,\n    count(*) FILTER (WHERE (reward_type = 'discount'::text)) AS discounts_count,\n    max(earned_at) AS last_earned_at\n   FROM app_rewards.reward_transactions\n  GROUP BY internal_user_id, asset_code;"
       }
     ]
   },
@@ -1210,6 +1318,19 @@
         ]
       },
       {
+        "name": "fetch_next_events",
+        "schema": "app_rewards",
+        "source": "CREATE OR REPLACE FUNCTION app_rewards.fetch_next_events(p_limit integer)\n RETURNS SETOF app_rewards.reward_events\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    RETURN QUERY\r\n    SELECT *\r\n    FROM app_rewards.reward_events\r\n    WHERE status IN ('pending', 'retrying')\r\n      AND (next_retry_at IS NULL OR next_retry_at <= now())\r\n      AND (processing_started_at IS NULL OR processing_started_at < now() - interval '5 minutes')\r\n    ORDER BY created_at, id\r\n    LIMIT p_limit\r\n    FOR UPDATE SKIP LOCKED;\r\nEND;\r\n$function$\n",
+        "returns": "app_rewards.reward_events",
+        "language": "plpgsql",
+        "arguments": [
+          {
+            "name": "p_limit",
+            "type": "integer"
+          }
+        ]
+      },
+      {
         "name": "get_active_rule_version",
         "schema": "app_rewards",
         "source": "CREATE OR REPLACE FUNCTION app_rewards.get_active_rule_version(p_event_id uuid)\n RETURNS TABLE(rule_id uuid, version integer, reward_config jsonb, starts_at timestamp with time zone, expires_at timestamp with time zone)\n LANGUAGE plpgsql\n STABLE\nAS $function$\r\nBEGIN\r\n    RETURN QUERY\r\n    SELECT rv.id, rv.version, rv.reward_config, rv.starts_at, rv.expires_at\r\n    FROM app_rewards.reward_rule_versions rv\r\n    WHERE rv.event_id = p_event_id\r\n      AND rv.is_active = true\r\n      AND rv.is_deleted = false\r\n      AND (rv.starts_at IS NULL OR rv.starts_at <= now())\r\n      AND (rv.expires_at IS NULL OR rv.expires_at > now())\r\n    ORDER BY rv.version DESC\r\n    LIMIT 1;\r\nEND;\r\n$function$\n",
@@ -1407,9 +1528,42 @@
         ]
       },
       {
+        "name": "log_processing_step",
+        "schema": "app_rewards",
+        "source": "CREATE OR REPLACE FUNCTION app_rewards.log_processing_step(p_event_id uuid, p_step text, p_status text, p_details jsonb DEFAULT NULL::jsonb, p_error text DEFAULT NULL::text, p_trace_id uuid DEFAULT NULL::uuid)\n RETURNS void\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    INSERT INTO app_rewards.processing_log (event_id, step, status, details, error_message, trace_id)\r\n    VALUES (p_event_id, p_step, p_status, p_details, p_error, p_trace_id);\r\nEND;\r\n$function$\n",
+        "returns": "void",
+        "language": "plpgsql",
+        "arguments": [
+          {
+            "name": "p_event_id",
+            "type": "uuid"
+          },
+          {
+            "name": "p_step",
+            "type": "text"
+          },
+          {
+            "name": "p_status",
+            "type": "text"
+          },
+          {
+            "name": "p_details",
+            "type": "jsonb"
+          },
+          {
+            "name": "p_error",
+            "type": "text"
+          },
+          {
+            "name": "p_trace_id",
+            "type": "uuid"
+          }
+        ]
+      },
+      {
         "name": "process_reward_event",
         "schema": "app_rewards",
-        "source": "CREATE OR REPLACE FUNCTION app_rewards.process_reward_event(p_limit integer DEFAULT 10)\n RETURNS TABLE(processed_event_id uuid, transaction_id uuid, action_taken text)\n LANGUAGE plpgsql\nAS $function$\r\nDECLARE\r\n    v_event app_rewards.reward_events%ROWTYPE;\r\n    v_rule RECORD;\r\n    v_transaction_id uuid;\r\n    v_calc RECORD;\r\n    v_now timestamptz := now();\r\n    v_action text;\r\n    v_new_retry_count integer;\r\nBEGIN\r\n    FOR v_event IN\r\n        SELECT * FROM app_rewards.reward_events\r\n        WHERE status IN ('pending', 'retrying')\r\n          AND (next_retry_at IS NULL OR next_retry_at <= v_now)\r\n          AND (processing_started_at IS NULL OR processing_started_at < v_now - interval '5 minutes')\r\n        ORDER BY created_at, id\r\n        LIMIT p_limit\r\n        FOR UPDATE SKIP LOCKED\r\n    LOOP\r\n        -- تحديث الحالة إلى processing (بدون تعديل retry_count هنا)\r\n        UPDATE app_rewards.reward_events\r\n        SET status = 'processing', processing_started_at = v_now\r\n        WHERE id = v_event.id;\r\n\r\n        -- 1. جلب القاعدة النشطة\r\n        SELECT * INTO v_rule\r\n        FROM app_rewards.resolve_rule(v_event.event_id);\r\n\r\n        IF NOT FOUND THEN\r\n            UPDATE app_rewards.reward_events\r\n            SET status = 'failed', last_error = 'No active rule found', completed_at = v_now\r\n            WHERE id = v_event.id;\r\n            v_action := 'no_rule';\r\n            processed_event_id := v_event.id;\r\n            transaction_id := NULL;\r\n            RETURN NEXT;\r\n            CONTINUE;\r\n        END IF;\r\n\r\n        -- 2. حساب المكافأة\r\n        SELECT * INTO v_calc\r\n        FROM app_rewards.calculate_reward(v_rule.rule_config);\r\n\r\n        -- 3. منح المكافأة (idempotency تدار داخل grant_reward_transaction)\r\n        BEGIN\r\n            v_transaction_id := app_rewards.grant_reward_transaction(\r\n                p_user_id => v_event.user_id,\r\n                p_event_id => v_event.event_id,\r\n                p_rule_id => v_rule.rule_id,\r\n                p_reward_type => 'point',\r\n                p_idempotency_key => v_event.id::text || ':' || v_rule.rule_id::text,\r\n                p_amount => v_calc.amount,\r\n                p_value => v_calc.value,\r\n                p_asset_code => v_calc.asset_code,\r\n                p_source_type => 'reward_event',\r\n                p_source_id => v_event.id,\r\n                p_metadata => v_event.metadata,\r\n                p_rule_snapshot => v_rule.rule_snapshot\r\n            );\r\n            -- نجاح\r\n            UPDATE app_rewards.reward_events\r\n            SET status = 'completed', completed_at = v_now\r\n            WHERE id = v_event.id;\r\n            v_action := 'granted';\r\n        EXCEPTION WHEN OTHERS THEN\r\n            -- فشل: حساب retry_count و next_retry_at بشكل صحيح\r\n            v_new_retry_count := COALESCE(v_event.retry_count, 0) + 1;\r\n            IF v_new_retry_count >= v_event.max_retries THEN\r\n                -- Dead letter\r\n                UPDATE app_rewards.reward_events\r\n                SET status = 'dead_letter',\r\n                    retry_count = v_new_retry_count,\r\n                    last_error = SQLERRM,\r\n                    dead_letter_reason = SQLERRM,\r\n                    completed_at = v_now\r\n                WHERE id = v_event.id;\r\n                v_action := 'dead_letter';\r\n                v_transaction_id := NULL;\r\n            ELSE\r\n                UPDATE app_rewards.reward_events\r\n                SET status = 'retrying',\r\n                    retry_count = v_new_retry_count,\r\n                    last_error = SQLERRM,\r\n                    next_retry_at = app_rewards.calc_next_retry_at(2, v_new_retry_count)\r\n                WHERE id = v_event.id;\r\n                v_action := 'failed_retry';\r\n                v_transaction_id := NULL;\r\n            END IF;\r\n        END;\r\n\r\n        processed_event_id := v_event.id;\r\n        transaction_id := v_transaction_id;\r\n        RETURN NEXT;\r\n    END LOOP;\r\nEND;\r\n$function$\n",
+        "source": "CREATE OR REPLACE FUNCTION app_rewards.process_reward_event(p_limit integer DEFAULT 10)\n RETURNS TABLE(processed_event_id uuid, transaction_id uuid, action_taken text)\n LANGUAGE plpgsql\nAS $function$\r\nDECLARE\r\n    v_event app_rewards.reward_events%ROWTYPE;\r\n    v_trace_id uuid;\r\n    v_result RECORD;\r\nBEGIN\r\n    FOR v_event IN SELECT * FROM app_rewards.fetch_next_events(p_limit)\r\n    LOOP\r\n        v_trace_id := gen_random_uuid();\r\n        FOR v_result IN SELECT * FROM app_rewards.process_single_event(v_event.id, v_trace_id)\r\n        LOOP\r\n            processed_event_id := v_event.id;\r\n            transaction_id := v_result.transaction_id;\r\n            action_taken := v_result.action_taken;\r\n            RETURN NEXT;\r\n        END LOOP;\r\n    END LOOP;\r\nEND;\r\n$function$\n",
         "returns": "record",
         "language": "plpgsql",
         "arguments": [
@@ -1420,6 +1574,31 @@
           {
             "name": "processed_event_id",
             "type": null
+          },
+          {
+            "name": "transaction_id",
+            "type": null
+          },
+          {
+            "name": "action_taken",
+            "type": null
+          }
+        ]
+      },
+      {
+        "name": "process_single_event",
+        "schema": "app_rewards",
+        "source": "CREATE OR REPLACE FUNCTION app_rewards.process_single_event(p_event_id uuid, p_trace_id uuid DEFAULT gen_random_uuid())\n RETURNS TABLE(transaction_id uuid, action_taken text)\n LANGUAGE plpgsql\nAS $function$\r\nDECLARE\r\n    v_event app_rewards.reward_events%ROWTYPE;\r\n    v_rule RECORD;\r\n    v_calc RECORD;\r\n    v_transaction_id uuid;\r\n    v_action text;\r\n    v_now timestamptz := now();\r\nBEGIN\r\n    SELECT * INTO v_event FROM app_rewards.reward_events WHERE id = p_event_id FOR UPDATE;\r\n    IF NOT FOUND THEN\r\n        RETURN;\r\n    END IF;\r\n    \r\n    PERFORM app_rewards.log_processing_step(p_event_id, 'process', 'start', jsonb_build_object('status', v_event.status), NULL, p_trace_id);\r\n    \r\n    UPDATE app_rewards.reward_events SET status = 'processing', processing_started_at = v_now WHERE id = p_event_id;\r\n    \r\n    -- resolve rule\r\n    SELECT * INTO v_rule FROM app_rewards.resolve_rule(v_event.event_id);\r\n    IF NOT FOUND THEN\r\n        UPDATE app_rewards.reward_events SET status = 'failed', last_error = 'No active rule found', completed_at = v_now WHERE id = p_event_id;\r\n        PERFORM app_rewards.log_processing_step(p_event_id, 'resolve_rule', 'failure', NULL, 'No active rule found', p_trace_id);\r\n        transaction_id := NULL; action_taken := 'no_rule'; RETURN NEXT;\r\n        RETURN;\r\n    END IF;\r\n    PERFORM app_rewards.log_processing_step(p_event_id, 'resolve_rule', 'success', jsonb_build_object('rule_id', v_rule.rule_id), NULL, p_trace_id);\r\n    \r\n    -- calculate reward\r\n    BEGIN\r\n        SELECT * INTO v_calc FROM app_rewards.calculate_reward(v_rule.rule_config);\r\n        PERFORM app_rewards.log_processing_step(p_event_id, 'calculate', 'success', jsonb_build_object('amount', v_calc.amount), NULL, p_trace_id);\r\n    EXCEPTION WHEN OTHERS THEN\r\n        UPDATE app_rewards.reward_events SET status = 'failed', last_error = SQLERRM, completed_at = v_now WHERE id = p_event_id;\r\n        PERFORM app_rewards.log_processing_step(p_event_id, 'calculate', 'failure', NULL, SQLERRM, p_trace_id);\r\n        transaction_id := NULL; action_taken := 'calc_error'; RETURN NEXT;\r\n        RETURN;\r\n    END;\r\n    \r\n    -- grant transaction\r\n    BEGIN\r\n        v_transaction_id := app_rewards.grant_reward_transaction(\r\n            p_user_id => v_event.user_id,\r\n            p_event_id => v_event.event_id,\r\n            p_rule_id => v_rule.rule_id,\r\n            p_reward_type => 'point',\r\n            p_idempotency_key => v_event.id::text || ':' || v_rule.rule_id::text,\r\n            p_amount => v_calc.amount,\r\n            p_value => v_calc.value,\r\n            p_asset_code => v_calc.asset_code,\r\n            p_source_type => 'reward_event',\r\n            p_source_id => v_event.id,\r\n            p_metadata => v_event.metadata,\r\n            p_rule_snapshot => v_rule.rule_snapshot\r\n        );\r\n        UPDATE app_rewards.reward_events SET status = 'completed', completed_at = v_now WHERE id = p_event_id;\r\n        PERFORM app_rewards.log_processing_step(p_event_id, 'grant', 'success', jsonb_build_object('transaction_id', v_transaction_id), NULL, p_trace_id);\r\n        v_action := 'granted';\r\n    EXCEPTION WHEN OTHERS THEN\r\n        v_action := 'failed_retry';\r\n        v_transaction_id := NULL;\r\n        PERFORM app_rewards.log_processing_step(p_event_id, 'grant', 'failure', NULL, SQLERRM, p_trace_id);\r\n        UPDATE app_rewards.reward_events\r\n        SET status = 'retrying',\r\n            retry_count = COALESCE(retry_count, 0) + 1,\r\n            last_error = SQLERRM,\r\n            next_retry_at = app_rewards.calc_next_retry_at(2, COALESCE(retry_count, 0) + 1)\r\n        WHERE id = p_event_id;\r\n    END;\r\n    \r\n    transaction_id := v_transaction_id;\r\n    action_taken := v_action;\r\n    RETURN NEXT;\r\nEND;\r\n$function$\n",
+        "returns": "record",
+        "language": "plpgsql",
+        "arguments": [
+          {
+            "name": "p_event_id",
+            "type": "uuid"
+          },
+          {
+            "name": "p_trace_id",
+            "type": "uuid"
           },
           {
             "name": "transaction_id",
@@ -1465,72 +1644,6 @@
           {
             "name": "expires_at",
             "type": null
-          }
-        ]
-      },
-      {
-        "name": "reward_engine",
-        "schema": "app_rewards",
-        "source": "CREATE OR REPLACE FUNCTION app_rewards.reward_engine(p_user_uid text, p_event_name text, p_source_app text, p_description text, p_metadata jsonb DEFAULT '{}'::jsonb, p_currency text DEFAULT NULL::text)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\nAS $function$declare\r\n  v_rewards jsonb;\r\n\r\n  v_key text;\r\n  v_amount numeric;\r\n\r\n  v_balance_before numeric;\r\n  v_balance_after numeric;\r\n\r\n  v_event_id text;\r\n\r\n  v_any_processed boolean := false;\r\n  v_any_skipped boolean := false;\r\n\r\n  v_ref_key text;\r\nbegin\r\n\r\n  -- 🔍 get reward config (LATEST ACTIVE VERSION)\r\n  select reward_config::jsonb\r\n  into v_rewards\r\n  from public.reward_rule_versions\r\n  where event_name = p_event_name\r\n    and is_active = true\r\n  order by created_at desc\r\n  limit 1;\r\n\r\n  if v_rewards is null then\r\n    return jsonb_build_object(\r\n      'success', false,\r\n      'message', 'event_not_found'\r\n    );\r\n  end if;\r\n\r\n  -- 🧠 extract referral context (if exists)\r\n  v_ref_key := p_metadata->>'referral_key';\r\n\r\n  -- 🔁 loop rewards\r\n  for v_key, v_amount in\r\n    select * from jsonb_each_text(v_rewards)\r\n  loop\r\n\r\n    v_key := lower(v_key);\r\n\r\n    -- 🔑 idempotency (context-aware)\r\n    v_event_id :=\r\n      p_event_name || '_' || v_key || '_' ||\r\n      coalesce(v_ref_key, p_user_uid);\r\n\r\n    if exists (\r\n      select 1\r\n      from public.processed_events\r\n      where event_id = v_event_id\r\n    ) then\r\n      v_any_skipped := true;\r\n      continue;\r\n    end if;\r\n\r\n    insert into public.processed_events (event_id, event_type, user_uid)\r\n    values (v_event_id, p_event_name, p_user_uid)\r\n    on conflict (event_id) do nothing;\r\n\r\n    v_any_processed := true;\r\n\r\n    -- 🧮 balance\r\n    select coalesce(sum(\"transactionAmount\"), 0)\r\n    into v_balance_before\r\n    from public.\"centerTransactions\"\r\n    where \"transactionUserUID\" = p_user_uid\r\n      and lower(\"transactionWallet\") = v_key;\r\n\r\n    v_balance_after := v_balance_before + v_amount;\r\n\r\n    -- 💰 transaction insert\r\n    insert into public.\"centerTransactions\" (\r\n      \"transactionId\",\r\n      \"transactionUserUID\",\r\n      \"transactionAmount\",\r\n      \"transactionDirection\",\r\n      \"transactionStatus\",\r\n      \"balanceBefore\",\r\n      \"balanceAfter\",\r\n      \"sourceApp\",\r\n      \"transactionWallet\",\r\n      \"transactionTitle\",\r\n      \"transactionDescription\",\r\n      \"currency\",\r\n      \"fromActorType\",\r\n      \"toActorType\",\r\n      \"toUID\",\r\n      \"createdAt\",\r\n      \"updatedAt\",\r\n      \"completedAt\"\r\n    )\r\n    values (\r\n      gen_random_uuid()::text,\r\n      p_user_uid,\r\n      v_amount,\r\n      'credit',\r\n      'completed',\r\n      v_balance_before,\r\n      v_balance_after,\r\n      p_source_app,\r\n      v_key,\r\n      p_event_name,\r\n      p_description,\r\n      case when v_key = 'cash' then p_currency else null end,\r\n      'system',\r\n      'user',\r\n      p_user_uid,\r\n      now(),\r\n      now(),\r\n      now()\r\n    );\r\n\r\n  end loop;\r\n\r\n  -- 🧠 response\r\n  if v_any_processed and v_any_skipped then\r\n    return jsonb_build_object('success', true, 'message', 'partial_processed');\r\n  elsif v_any_processed then\r\n    return jsonb_build_object('success', true, 'message', 'processed');\r\n  else\r\n    return jsonb_build_object('success', true, 'message', 'skipped');\r\n  end if;\r\n\r\nend;$function$\n",
-        "returns": "jsonb",
-        "language": "plpgsql",
-        "arguments": [
-          {
-            "name": "p_user_uid",
-            "type": "text"
-          },
-          {
-            "name": "p_event_name",
-            "type": "text"
-          },
-          {
-            "name": "p_source_app",
-            "type": "text"
-          },
-          {
-            "name": "p_description",
-            "type": "text"
-          },
-          {
-            "name": "p_metadata",
-            "type": "jsonb"
-          },
-          {
-            "name": "p_currency",
-            "type": "text"
-          }
-        ]
-      },
-      {
-        "name": "reward_engine",
-        "schema": "app_rewards",
-        "source": "CREATE OR REPLACE FUNCTION app_rewards.reward_engine(p_user_uid uuid, p_event_name text, p_source_app text, p_description text, p_metadata jsonb DEFAULT '{}'::jsonb, p_currency text DEFAULT NULL::text)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\nAS $function$declare\r\n  v_rewards jsonb;\r\n\r\n  v_key text;\r\n  v_amount numeric;\r\n\r\n  v_balance_before numeric;\r\n  v_balance_after numeric;\r\n\r\n  v_event_id text;\r\n\r\n  v_any_processed boolean := false;\r\n  v_any_skipped boolean := false;\r\n\r\n  v_ref_key text;\r\nbegin\r\n\r\n  -- 🔍 get reward config\r\n  select reward_config\r\n  into v_rewards\r\n  from public.reward_rules\r\n  where event_name = p_event_name\r\n    and is_active = true;\r\n\r\n  if v_rewards is null then\r\n    return jsonb_build_object(\r\n      'success', false,\r\n      'message', 'event_not_found'\r\n    );\r\n  end if;\r\n\r\n  -- 🧠 extract referral context (if exists)\r\n  v_ref_key := p_metadata->>'referral_key';\r\n\r\n  -- 🔁 loop rewards\r\n  for v_key, v_amount in\r\n    select * from jsonb_each_text(v_rewards)\r\n  loop\r\n\r\n    v_key := lower(v_key);\r\n\r\n    -- 🔑 idempotency (context-aware)\r\n    v_event_id :=\r\n      p_event_name || '_' || v_key || '_' ||\r\n      coalesce(v_ref_key, p_user_uid::text);\r\n\r\n    if exists (\r\n      select 1\r\n      from public.processed_events\r\n      where event_id = v_event_id\r\n    ) then\r\n      v_any_skipped := true;\r\n      continue;\r\n    end if;\r\n\r\n    insert into public.processed_events (event_id, event_type, user_uid)\r\n    values (v_event_id, p_event_name, p_user_uid)\r\n    on conflict (event_id) do nothing;\r\n\r\n    v_any_processed := true;\r\n\r\n    -- 🧮 balance\r\n    select coalesce(sum(\"transactionAmount\"), 0)\r\n    into v_balance_before\r\n    from public.\"centerTransactions\"\r\n    where \"transactionUserUID\" = p_user_uid::text\r\n      and lower(\"transactionWallet\") = v_key;\r\n\r\n    v_balance_after := v_balance_before + v_amount;\r\n\r\n    -- 💰 transaction insert\r\n    insert into public.\"centerTransactions\" (\r\n      \"transactionId\",\r\n      \"transactionUserUID\",\r\n      \"transactionAmount\",\r\n      \"transactionDirection\",\r\n      \"transactionStatus\",\r\n      \"balanceBefore\",\r\n      \"balanceAfter\",\r\n      \"sourceApp\",\r\n      \"transactionWallet\",\r\n      \"transactionTitle\",\r\n      \"transactionDescription\",\r\n      \"currency\",\r\n      \"fromActorType\",\r\n      \"toActorType\",\r\n      \"toUID\",\r\n      \"createdAt\",\r\n      \"updatedAt\",\r\n      \"completedAt\"\r\n    )\r\n    values (\r\n      gen_random_uuid()::text,\r\n      p_user_uid::text,\r\n      v_amount,\r\n      'credit',\r\n      'completed',\r\n      v_balance_before,\r\n      v_balance_after,\r\n      p_source_app,\r\n      v_key,\r\n      p_event_name,\r\n      p_description,\r\n      case when v_key = 'cash' then p_currency else null end,\r\n      'system',\r\n      'user',\r\n      p_user_uid::text,\r\n      now(),\r\n      now(),\r\n      now()\r\n    );\r\n\r\n  end loop;\r\n\r\n  -- 🧠 response\r\n  if v_any_processed and v_any_skipped then\r\n    return jsonb_build_object('success', true, 'message', 'partial_processed');\r\n  elsif v_any_processed then\r\n    return jsonb_build_object('success', true, 'message', 'processed');\r\n  else\r\n    return jsonb_build_object('success', true, 'message', 'skipped');\r\n  end if;\r\n\r\nend;$function$\n",
-        "returns": "jsonb",
-        "language": "plpgsql",
-        "arguments": [
-          {
-            "name": "p_user_uid",
-            "type": "uuid"
-          },
-          {
-            "name": "p_event_name",
-            "type": "text"
-          },
-          {
-            "name": "p_source_app",
-            "type": "text"
-          },
-          {
-            "name": "p_description",
-            "type": "text"
-          },
-          {
-            "name": "p_metadata",
-            "type": "jsonb"
-          },
-          {
-            "name": "p_currency",
-            "type": "text"
           }
         ]
       },
@@ -1720,13 +1833,13 @@
         "schema": "app_rewards",
         "raw_sql": null,
         "operation": "INSERT",
-        "with_check": "(auth.uid() = user_id)"
+        "with_check": "(auth.uid() = internal_user_id)"
       },
       {
         "name": "Users can view own reward_events",
         "roles": null,
         "table": "reward_events",
-        "using": "(auth.uid() = user_id)",
+        "using": "(auth.uid() = internal_user_id)",
         "schema": "app_rewards",
         "raw_sql": null,
         "operation": "SELECT",
@@ -1776,7 +1889,7 @@
         "name": "Users can view own reward_transactions",
         "roles": null,
         "table": "reward_transactions",
-        "using": "(auth.uid() = user_id)",
+        "using": "(auth.uid() = internal_user_id)",
         "schema": "app_rewards",
         "raw_sql": null,
         "operation": "SELECT",
