@@ -1,0 +1,25 @@
+{
+  "schema": "app_wallet",
+  "environment": "dev",
+  "version": "1.0.0",
+  "snapshot": "current",
+  "generated_at": "2026-05-13T18:47:56.360530",
+  "postgres_version": "17.6",
+  "supabase_cli_version": "2.98.2",
+  "enums_count": 13,
+  "table_count": 0,
+  "indexes_count": 52,
+  "function_count": 22,
+  "trigger_count": 10,
+  "policy_count": 0,
+  "views_count": 0,
+  "seeds_count": 0,
+  "files": [
+    "00_full_schema.sql",
+    "02_tables.sql",
+    "03_indexes.sql",
+    "04_functions.sql",
+    "05_triggers.sql"
+  ],
+  "hash": "88725096654146356734762132992019497394967217"
+}
