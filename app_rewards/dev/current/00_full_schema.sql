@@ -5,7 +5,7 @@
     "data": {
       "schema": "app_rewards",
       "version": "1.0.0",
-      "exported_at": "2026-05-13T20:41:56.433434+00:00",
+      "exported_at": "2026-05-13T20:48:04.110517+00:00",
       "module_name": "rewards_engine",
       "business_purpose": "Reward management and processing"
     }
@@ -422,6 +422,68 @@
             ]
           }
         ]
+      },
+      {
+        "name": "reward_ledger_view",
+        "schema": "app_rewards",
+        "columns": [
+          {
+            "name": "user_id",
+            "type": "uuid",
+            "default": null,
+            "nullable": true,
+            "is_identity": false
+          },
+          {
+            "name": "asset_code",
+            "type": "text",
+            "default": null,
+            "nullable": true,
+            "is_identity": false
+          },
+          {
+            "name": "total_points",
+            "type": "numeric",
+            "default": null,
+            "nullable": true,
+            "is_identity": false
+          },
+          {
+            "name": "total_cashback",
+            "type": "numeric",
+            "default": null,
+            "nullable": true,
+            "is_identity": false
+          },
+          {
+            "name": "badges_count",
+            "type": "bigint",
+            "default": null,
+            "nullable": true,
+            "is_identity": false
+          },
+          {
+            "name": "discounts_count",
+            "type": "bigint",
+            "default": null,
+            "nullable": true,
+            "is_identity": false
+          },
+          {
+            "name": "last_earned_at",
+            "type": "timestamp with time zone",
+            "default": null,
+            "nullable": true,
+            "is_identity": false
+          }
+        ],
+        "indexes": null,
+        "raw_sql": "CREATE TABLE app_rewards.reward_ledger_view (\\n    user_id uuid,\n    asset_code text,\n    total_points numeric,\n    total_cashback numeric,\n    badges_count bigint,\n    discounts_count bigint,\n    last_earned_at timestamp with time zone\\n);",
+        "primary_key": null,
+        "foreign_keys": null,
+        "business_purpose": null,
+        "check_constraints": null,
+        "unique_constraints": null
       },
       {
         "name": "reward_rule_audit_log",
@@ -1078,7 +1140,44 @@
   {
     "object_type": "views",
     "sort_order": 3,
-    "data": null
+    "data": [
+      {
+        "name": "reward_ledger_view",
+        "schema": "app_rewards",
+        "columns": [
+          {
+            "name": "user_id",
+            "type": "uuid"
+          },
+          {
+            "name": "asset_code",
+            "type": "text"
+          },
+          {
+            "name": "total_points",
+            "type": "numeric"
+          },
+          {
+            "name": "total_cashback",
+            "type": "numeric"
+          },
+          {
+            "name": "badges_count",
+            "type": "bigint"
+          },
+          {
+            "name": "discounts_count",
+            "type": "bigint"
+          },
+          {
+            "name": "last_earned_at",
+            "type": "timestamp with time zone"
+          }
+        ],
+        "raw_sql": "CREATE VIEW app_rewards.reward_ledger_view AS  SELECT internal_user_id AS user_id,\n    asset_code,\n    sum(\n        CASE\n            WHEN ((status = 'granted'::text) AND (reward_type = 'point'::text)) THEN amount\n            ELSE (0)::numeric\n        END) AS total_points,\n    sum(\n        CASE\n            WHEN ((status = 'granted'::text) AND (reward_type = 'cashback'::text)) THEN amount\n            ELSE (0)::numeric\n        END) AS total_cashback,\n    count(*) FILTER (WHERE (reward_type = 'badge'::text)) AS badges_count,\n    count(*) FILTER (WHERE (reward_type = 'discount'::text)) AS discounts_count,\n    max(earned_at) AS last_earned_at\n   FROM app_rewards.reward_transactions\n  GROUP BY internal_user_id, asset_code;;",
+        "definition": " SELECT internal_user_id AS user_id,\n    asset_code,\n    sum(\n        CASE\n            WHEN ((status = 'granted'::text) AND (reward_type = 'point'::text)) THEN amount\n            ELSE (0)::numeric\n        END) AS total_points,\n    sum(\n        CASE\n            WHEN ((status = 'granted'::text) AND (reward_type = 'cashback'::text)) THEN amount\n            ELSE (0)::numeric\n        END) AS total_cashback,\n    count(*) FILTER (WHERE (reward_type = 'badge'::text)) AS badges_count,\n    count(*) FILTER (WHERE (reward_type = 'discount'::text)) AS discounts_count,\n    max(earned_at) AS last_earned_at\n   FROM app_rewards.reward_transactions\n  GROUP BY internal_user_id, asset_code;"
+      }
+    ]
   },
   {
     "object_type": "functions",
@@ -1499,7 +1598,7 @@
       {
         "name": "process_single_event",
         "schema": "app_rewards",
-        "source": "CREATE OR REPLACE FUNCTION app_rewards.process_single_event(p_event_id uuid, p_trace_id uuid DEFAULT gen_random_uuid())\n RETURNS TABLE(transaction_id uuid, action_taken text)\n LANGUAGE plpgsql\nAS $function$\r\nDECLARE\r\n    v_event app_rewards.reward_events%ROWTYPE;\r\n    v_rule RECORD;\r\n    v_calc RECORD;\r\n    v_transaction_id uuid;\r\n    v_action text;\r\n    v_now timestamptz := now();\r\nBEGIN\r\n    SELECT * INTO v_event FROM app_rewards.reward_events WHERE id = p_event_id FOR UPDATE;\r\n    IF NOT FOUND THEN\r\n        RETURN;\r\n    END IF;\r\n    \r\n    PERFORM app_rewards.log_processing_step(p_event_id, 'process', 'start', jsonb_build_object('status', v_event.status), NULL, p_trace_id);\r\n    \r\n    UPDATE app_rewards.reward_events SET status = 'processing', processing_started_at = v_now WHERE id = p_event_id;\r\n    \r\n    -- resolve rule\r\n    SELECT * INTO v_rule FROM app_rewards.resolve_rule(v_event.event_id);\r\n    IF NOT FOUND THEN\r\n        UPDATE app_rewards.reward_events SET status = 'failed', last_error = 'No active rule found', completed_at = v_now WHERE id = p_event_id;\r\n        PERFORM app_rewards.log_processing_step(p_event_id, 'resolve_rule', 'failure', NULL, 'No active rule found', p_trace_id);\r\n        transaction_id := NULL; action_taken := 'no_rule'; RETURN NEXT;\r\n        RETURN;\r\n    END IF;\r\n    PERFORM app_rewards.log_processing_step(p_event_id, 'resolve_rule', 'success', jsonb_build_object('rule_id', v_rule.rule_id), NULL, p_trace_id);\r\n    \r\n    -- calculate reward\r\n    BEGIN\r\n        SELECT * INTO v_calc FROM app_rewards.calculate_reward(v_rule.rule_config);\r\n        PERFORM app_rewards.log_processing_step(p_event_id, 'calculate', 'success', jsonb_build_object('amount', v_calc.amount), NULL, p_trace_id);\r\n    EXCEPTION WHEN OTHERS THEN\r\n        UPDATE app_rewards.reward_events SET status = 'failed', last_error = SQLERRM, completed_at = v_now WHERE id = p_event_id;\r\n        PERFORM app_rewards.log_processing_step(p_event_id, 'calculate', 'failure', NULL, SQLERRM, p_trace_id);\r\n        transaction_id := NULL; action_taken := 'calc_error'; RETURN NEXT;\r\n        RETURN;\r\n    END;\r\n    \r\n    -- grant transaction\r\n    BEGIN\r\n        v_transaction_id := app_rewards.grant_reward_transaction(\r\n            p_user_id => v_event.user_id,\r\n            p_event_id => v_event.event_id,\r\n            p_rule_id => v_rule.rule_id,\r\n            p_reward_type => 'point',\r\n            p_idempotency_key => v_event.id::text || ':' || v_rule.rule_id::text,\r\n            p_amount => v_calc.amount,\r\n            p_value => v_calc.value,\r\n            p_asset_code => v_calc.asset_code,\r\n            p_source_type => 'reward_event',\r\n            p_source_id => v_event.id,\r\n            p_metadata => v_event.metadata,\r\n            p_rule_snapshot => v_rule.rule_snapshot\r\n        );\r\n        UPDATE app_rewards.reward_events SET status = 'completed', completed_at = v_now WHERE id = p_event_id;\r\n        PERFORM app_rewards.log_processing_step(p_event_id, 'grant', 'success', jsonb_build_object('transaction_id', v_transaction_id), NULL, p_trace_id);\r\n        v_action := 'granted';\r\n    EXCEPTION WHEN OTHERS THEN\r\n        v_action := 'failed_retry';\r\n        v_transaction_id := NULL;\r\n        PERFORM app_rewards.log_processing_step(p_event_id, 'grant', 'failure', NULL, SQLERRM, p_trace_id);\r\n        UPDATE app_rewards.reward_events\r\n        SET status = 'retrying',\r\n            retry_count = COALESCE(retry_count, 0) + 1,\r\n            last_error = SQLERRM,\r\n            next_retry_at = app_rewards.calc_next_retry_at(2, COALESCE(retry_count, 0) + 1)\r\n        WHERE id = p_event_id;\r\n    END;\r\n    \r\n    transaction_id := v_transaction_id;\r\n    action_taken := v_action;\r\n    RETURN NEXT;\r\nEND;\r\n$function$\n",
+        "source": "CREATE OR REPLACE FUNCTION app_rewards.process_single_event(p_event_id uuid, p_trace_id uuid DEFAULT gen_random_uuid())\n RETURNS TABLE(transaction_id uuid, action_taken text)\n LANGUAGE plpgsql\nAS $function$\r\nDECLARE\r\n    v_event app_rewards.reward_events%ROWTYPE;\r\n    v_rule RECORD;\r\n    v_calc RECORD;\r\n    v_transaction_id uuid;\r\n    v_action text;\r\n    v_now timestamptz := now();\r\n    v_retry_count int;\r\n    v_max_retries int;\r\n    v_reward_type text;\r\nBEGIN\r\n    SELECT * INTO v_event FROM app_rewards.reward_events WHERE id = p_event_id FOR UPDATE;\r\n    IF NOT FOUND THEN\r\n        RETURN;\r\n    END IF;\r\n    \r\n    PERFORM app_rewards.log_processing_step(p_event_id, 'process', 'start', jsonb_build_object('status', v_event.status), NULL, p_trace_id);\r\n    \r\n    UPDATE app_rewards.reward_events SET status = 'processing', processing_started_at = v_now WHERE id = p_event_id;\r\n    \r\n    -- resolve rule\r\n    SELECT * INTO v_rule FROM app_rewards.resolve_rule(v_event.event_id);\r\n    IF NOT FOUND THEN\r\n        UPDATE app_rewards.reward_events SET status = 'failed', last_error = 'No active rule found', completed_at = v_now WHERE id = p_event_id;\r\n        PERFORM app_rewards.log_processing_step(p_event_id, 'resolve_rule', 'failure', NULL, 'No active rule found', p_trace_id);\r\n        transaction_id := NULL; action_taken := 'no_rule'; RETURN NEXT;\r\n        RETURN;\r\n    END IF;\r\n    PERFORM app_rewards.log_processing_step(p_event_id, 'resolve_rule', 'success', jsonb_build_object('rule_id', v_rule.rule_id), NULL, p_trace_id);\r\n    \r\n    -- calculate reward\r\n    BEGIN\r\n        SELECT * INTO v_calc FROM app_rewards.calculate_reward(v_rule.rule_config);\r\n        PERFORM app_rewards.log_processing_step(p_event_id, 'calculate', 'success', jsonb_build_object('amount', v_calc.amount), NULL, p_trace_id);\r\n    EXCEPTION WHEN OTHERS THEN\r\n        UPDATE app_rewards.reward_events SET status = 'failed', last_error = SQLERRM, completed_at = v_now WHERE id = p_event_id;\r\n        PERFORM app_rewards.log_processing_step(p_event_id, 'calculate', 'failure', NULL, SQLERRM, p_trace_id);\r\n        transaction_id := NULL; action_taken := 'calc_error'; RETURN NEXT;\r\n        RETURN;\r\n    END;\r\n    \r\n    -- استخراج reward_type من الـ config (افتراضي 'point')\r\n    v_reward_type := COALESCE(v_rule.reward_config->>'reward_type', v_rule.reward_config->>'type', 'point');\r\n    \r\n    -- grant transaction\r\n    BEGIN\r\n        v_transaction_id := app_rewards.grant_reward_transaction(\r\n            p_user_id => v_event.user_id,\r\n            p_event_id => v_event.event_id,\r\n            p_rule_id => v_rule.rule_id,\r\n            p_reward_type => v_reward_type,\r\n            p_idempotency_key => v_event.id::text || ':' || v_rule.rule_id::text,\r\n            p_amount => v_calc.amount,\r\n            p_value => v_calc.value,\r\n            p_asset_code => v_calc.asset_code,\r\n            p_source_type => 'reward_event',\r\n            p_source_id => v_event.id,\r\n            p_metadata => v_event.metadata,\r\n            p_rule_snapshot => v_rule.rule_snapshot\r\n        );\r\n        UPDATE app_rewards.reward_events SET status = 'completed', completed_at = v_now WHERE id = p_event_id;\r\n        PERFORM app_rewards.log_processing_step(p_event_id, 'grant', 'success', jsonb_build_object('transaction_id', v_transaction_id), NULL, p_trace_id);\r\n        v_action := 'granted';\r\n    EXCEPTION WHEN OTHERS THEN\r\n        v_action := 'failed_retry';\r\n        v_transaction_id := NULL;\r\n        PERFORM app_rewards.log_processing_step(p_event_id, 'grant', 'failure', NULL, SQLERRM, p_trace_id);\r\n        \r\n        v_retry_count := COALESCE(v_event.retry_count, 0);\r\n        v_max_retries := COALESCE(v_event.max_retries, 3);\r\n        \r\n        IF v_retry_count + 1 >= v_max_retries THEN\r\n            -- آخر محاولة أو تجاوز الحد: ننهيها كـ failed\r\n            UPDATE app_rewards.reward_events\r\n            SET status = 'failed',\r\n                retry_count = v_retry_count + 1,\r\n                last_error = SQLERRM,\r\n                completed_at = v_now\r\n            WHERE id = p_event_id;\r\n            v_action := 'failed_final';\r\n        ELSE\r\n            UPDATE app_rewards.reward_events\r\n            SET status = 'retrying',\r\n                retry_count = v_retry_count + 1,\r\n                last_error = SQLERRM,\r\n                next_retry_at = app_rewards.calc_next_retry_at(2, v_retry_count + 1)\r\n            WHERE id = p_event_id;\r\n        END IF;\r\n    END;\r\n    \r\n    transaction_id := v_transaction_id;\r\n    action_taken := v_action;\r\n    RETURN NEXT;\r\nEND;\r\n$function$\n",
         "returns": "record",
         "language": "plpgsql",
         "arguments": [
