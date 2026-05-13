@@ -5,7 +5,7 @@
     "data": {
       "schema": "app_rewards",
       "version": "1.0.0",
-      "exported_at": "2026-05-13T20:13:43.40018+00:00",
+      "exported_at": "2026-05-13T20:26:45.254944+00:00",
       "module_name": "rewards_engine",
       "business_purpose": "Reward management and processing"
     }
@@ -795,8 +795,16 @@
         "business_purpose": null,
         "check_constraints": [
           {
+            "name": "chk_reward_config_schema",
+            "expression": "CHECK (app_rewards.is_valid_reward_config(reward_config)) NOT VALID"
+          },
+          {
             "name": "chk_reward_config_structure",
             "expression": "CHECK (reward_config ? 'amount'::text OR reward_config ? 'rewards'::text) NOT VALID"
+          },
+          {
+            "name": "chk_reward_config_valid",
+            "expression": "CHECK (app_rewards.is_valid_reward_config(reward_config)) NOT VALID"
           }
         ],
         "unique_constraints": [
@@ -1533,6 +1541,19 @@
         ]
       },
       {
+        "name": "is_valid_reward_config",
+        "schema": "app_rewards",
+        "source": "CREATE OR REPLACE FUNCTION app_rewards.is_valid_reward_config(config jsonb)\n RETURNS boolean\n LANGUAGE plpgsql\n IMMUTABLE\nAS $function$\r\nBEGIN\r\n    RETURN (config ? 'amount' AND (config->>'amount') ~ '^[0-9]+\\.?[0-9]*$')\r\n        OR (config ? 'rewards' AND jsonb_typeof(config->'rewards') = 'array');\r\nEND;\r\n$function$\n",
+        "returns": "boolean",
+        "language": "plpgsql",
+        "arguments": [
+          {
+            "name": "config",
+            "type": "jsonb"
+          }
+        ]
+      },
+      {
         "name": "log_processing_step",
         "schema": "app_rewards",
         "source": "CREATE OR REPLACE FUNCTION app_rewards.log_processing_step(p_event_id uuid, p_step text, p_status text, p_details jsonb DEFAULT NULL::jsonb, p_error text DEFAULT NULL::text, p_trace_id uuid DEFAULT NULL::uuid)\n RETURNS void\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    INSERT INTO app_rewards.processing_log (event_id, step, status, details, error_message, trace_id)\r\n    VALUES (p_event_id, p_step, p_status, p_details, p_error, p_trace_id);\r\nEND;\r\n$function$\n",
@@ -1758,7 +1779,7 @@
       {
         "name": "validate_and_snapshot_rule",
         "schema": "app_rewards",
-        "source": "CREATE OR REPLACE FUNCTION app_rewards.validate_and_snapshot_rule()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nDECLARE\r\n    v_rule RECORD;\r\nBEGIN\r\n    IF NEW.rule_id IS NOT NULL AND NEW.rule_snapshot IS NULL THEN\r\n        SELECT * INTO v_rule FROM app_rewards.resolve_rule(NEW.event_id);\r\n        IF NOT FOUND THEN\r\n            RAISE EXCEPTION 'Rule % is not active or not valid at this time', NEW.rule_id;\r\n        END IF;\r\n        NEW.rule_snapshot := v_rule.rule_snapshot;\r\n    END IF;\r\n    RETURN NEW;\r\nEND;\r\n$function$\n",
+        "source": "CREATE OR REPLACE FUNCTION app_rewards.validate_and_snapshot_rule()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    IF NEW.rule_id IS NOT NULL AND NEW.rule_snapshot IS NULL THEN\r\n        SELECT jsonb_build_object(\r\n            'id', rv.id,\r\n            'event_id', rv.event_id,\r\n            'version', rv.version,\r\n            'reward_config', rv.reward_config,\r\n            'starts_at', rv.starts_at,\r\n            'expires_at', rv.expires_at\r\n        ) INTO NEW.rule_snapshot\r\n        FROM app_rewards.reward_rule_versions rv\r\n        WHERE rv.id = NEW.rule_id\r\n          AND rv.is_active = true\r\n          AND (rv.starts_at IS NULL OR rv.starts_at <= now())\r\n          AND (rv.expires_at IS NULL OR rv.expires_at > now())\r\n          AND rv.is_deleted = false;\r\n    END IF;\r\n    RETURN NEW;\r\nEND;\r\n$function$\n",
         "returns": "trigger",
         "language": "plpgsql",
         "arguments": null
