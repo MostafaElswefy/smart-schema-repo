@@ -1,5 +1,1193 @@
 [
   {
+    "object_type": "COLUMN COMMENT",
+    "schema_name": "work",
+    "object_name": "work_financial_routes.beneficiary_type",
+    "definition": "COMMENT ON COLUMN work.work_financial_routes.beneficiary_type IS 'Determines who receives the money: \"payer\", \"payee\", \"both\", \"platform\".';"
+  },
+  {
+    "object_type": "COMMENT",
+    "schema_name": "work",
+    "object_name": "idx_contract_participants_lookup",
+    "definition": "COMMENT ON TABLE work.idx_contract_participants_lookup IS 'Accelerates role resolution for permission checks (active participants only).';"
+  },
+  {
+    "object_type": "COMMENT",
+    "schema_name": "work",
+    "object_name": "idx_contract_permissions_entity",
+    "definition": "COMMENT ON TABLE work.idx_contract_permissions_entity IS 'Used by check_contract_permission for direct RBAC lookups.';"
+  },
+  {
+    "object_type": "COMMENT",
+    "schema_name": "work",
+    "object_name": "permission_evaluation_log",
+    "definition": "COMMENT ON TABLE work.permission_evaluation_log IS 'Audit log for permission evaluation to resolve ambiguity between direct entity and role-based policies.';"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "approval_step_assignees_entity_id_fkey",
+    "definition": "ALTER TABLE work.approval_step_assignees ADD CONSTRAINT approval_step_assignees_entity_id_fkey FOREIGN KEY (entity_id) REFERENCES ecosystem.entities(id);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "approval_step_assignees_pkey",
+    "definition": "ALTER TABLE work.approval_step_assignees ADD CONSTRAINT approval_step_assignees_pkey PRIMARY KEY (id);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "approval_step_assignees_workflow_step_id_fkey",
+    "definition": "ALTER TABLE work.approval_step_assignees ADD CONSTRAINT approval_step_assignees_workflow_step_id_fkey FOREIGN KEY (workflow_step_id) REFERENCES work.approval_workflow_steps(id) ON DELETE CASCADE;"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "approval_workflow_steps_pkey",
+    "definition": "ALTER TABLE work.approval_workflow_steps ADD CONSTRAINT approval_workflow_steps_pkey PRIMARY KEY (id);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "approval_workflow_steps_step_type_check",
+    "definition": "ALTER TABLE work.approval_workflow_steps ADD CONSTRAINT approval_workflow_steps_step_type_check CHECK ((step_type = ANY (ARRAY['sequential'::text, 'parallel'::text, 'quorum'::text])));"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "approval_workflow_steps_workflow_template_id_fkey",
+    "definition": "ALTER TABLE work.approval_workflow_steps ADD CONSTRAINT approval_workflow_steps_workflow_template_id_fkey FOREIGN KEY (workflow_template_id) REFERENCES work.approval_workflow_templates(id) ON DELETE CASCADE;"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "approval_workflow_templates_pkey",
+    "definition": "ALTER TABLE work.approval_workflow_templates ADD CONSTRAINT approval_workflow_templates_pkey PRIMARY KEY (id);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "chk_allocation_percent_range",
+    "definition": "ALTER TABLE work.contract_participants ADD CONSTRAINT chk_allocation_percent_range CHECK (((allocation_percent IS NULL) OR ((allocation_percent >= (0)::numeric) AND (allocation_percent <= (100)::numeric))));"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "chk_amount_or_percentage",
+    "definition": "ALTER TABLE work.work_financial_routes ADD CONSTRAINT chk_amount_or_percentage CHECK (((amount IS NOT NULL) <> (percentage IS NOT NULL)));"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "chk_dispute_target",
+    "definition": "ALTER TABLE work.dispute_cases ADD CONSTRAINT chk_dispute_target CHECK ((((execution_unit_id IS NOT NULL) AND (approval_id IS NULL)) OR ((execution_unit_id IS NULL) AND (approval_id IS NOT NULL)) OR ((execution_unit_id IS NULL) AND (approval_id IS NULL))));"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "chk_effective_not_before_creation",
+    "definition": "ALTER TABLE work.work_ownership_transfers ADD CONSTRAINT chk_effective_not_before_creation CHECK ((effective_at >= created_at));"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "chk_effective_not_too_old",
+    "definition": "ALTER TABLE work.work_ownership_transfers ADD CONSTRAINT chk_effective_not_too_old CHECK ((effective_at >= (created_at - '5 years'::interval)));"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "chk_financial_percent_range",
+    "definition": "ALTER TABLE work.work_financial_routes ADD CONSTRAINT chk_financial_percent_range CHECK (((percentage IS NULL) OR ((percentage >= (0)::numeric) AND (percentage <= (100)::numeric))));"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "chk_milestone_amount",
+    "definition": "ALTER TABLE work.work_execution_units ADD CONSTRAINT chk_milestone_amount CHECK ((((is_milestone = false) AND (milestone_amount IS NULL)) OR ((is_milestone = true) AND (milestone_amount IS NOT NULL))));"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "chk_progress_percent_range",
+    "definition": "ALTER TABLE work.work_execution_units ADD CONSTRAINT chk_progress_percent_range CHECK (((progress_percent >= (0)::numeric) AND (progress_percent <= (100)::numeric)));"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "chk_total_amount_non_negative",
+    "definition": "ALTER TABLE work.contracts ADD CONSTRAINT chk_total_amount_non_negative CHECK ((total_amount >= (0)::numeric));"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "chk_transfer_diff_entities",
+    "definition": "ALTER TABLE work.work_ownership_transfers ADD CONSTRAINT chk_transfer_diff_entities CHECK ((from_entity_id <> to_entity_id));"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "chk_transfer_percentage_scope",
+    "definition": "ALTER TABLE work.work_ownership_transfers ADD CONSTRAINT chk_transfer_percentage_scope CHECK ((((transfer_scope = 'full'::work.transfer_scope) AND (percentage IS NULL)) OR ((transfer_scope = 'partial'::work.transfer_scope) AND (percentage IS NOT NULL) AND (percentage >= (0)::numeric) AND (percentage <= (100)::numeric))));"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "contract_approval_workflows_contract_id_fkey",
+    "definition": "ALTER TABLE work.contract_approval_workflows ADD CONSTRAINT contract_approval_workflows_contract_id_fkey FOREIGN KEY (contract_id) REFERENCES work.contracts(id) ON DELETE CASCADE;"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "contract_approval_workflows_pkey",
+    "definition": "ALTER TABLE work.contract_approval_workflows ADD CONSTRAINT contract_approval_workflows_pkey PRIMARY KEY (id);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "contract_approval_workflows_workflow_template_id_fkey",
+    "definition": "ALTER TABLE work.contract_approval_workflows ADD CONSTRAINT contract_approval_workflows_workflow_template_id_fkey FOREIGN KEY (workflow_template_id) REFERENCES work.approval_workflow_templates(id);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "contract_approvals_pkey",
+    "definition": "ALTER TABLE work.contract_approvals ADD CONSTRAINT contract_approvals_pkey PRIMARY KEY (id);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "contract_links_pkey",
+    "definition": "ALTER TABLE work.contract_links ADD CONSTRAINT contract_links_pkey PRIMARY KEY (id);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "contract_messages_pkey",
+    "definition": "ALTER TABLE work.contract_messages ADD CONSTRAINT contract_messages_pkey PRIMARY KEY (id);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "contract_ownership_history_contract_id_fkey",
+    "definition": "ALTER TABLE work.contract_ownership_history ADD CONSTRAINT contract_ownership_history_contract_id_fkey FOREIGN KEY (contract_id) REFERENCES work.contracts(id) ON DELETE CASCADE;"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "contract_ownership_history_pkey",
+    "definition": "ALTER TABLE work.contract_ownership_history ADD CONSTRAINT contract_ownership_history_pkey PRIMARY KEY (id);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "contract_participants_pkey",
+    "definition": "ALTER TABLE work.contract_participants ADD CONSTRAINT contract_participants_pkey PRIMARY KEY (id);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "contract_permissions_pkey",
+    "definition": "ALTER TABLE work.contract_permissions ADD CONSTRAINT contract_permissions_pkey PRIMARY KEY (id);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "contracts_pkey",
+    "definition": "ALTER TABLE work.contracts ADD CONSTRAINT contracts_pkey PRIMARY KEY (id);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "dispute_cases_against_entity_id_fkey",
+    "definition": "ALTER TABLE work.dispute_cases ADD CONSTRAINT dispute_cases_against_entity_id_fkey FOREIGN KEY (against_entity_id) REFERENCES ecosystem.entities(id);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "dispute_cases_approval_id_fkey",
+    "definition": "ALTER TABLE work.dispute_cases ADD CONSTRAINT dispute_cases_approval_id_fkey FOREIGN KEY (approval_id) REFERENCES work.contract_approvals(id) ON DELETE SET NULL;"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "dispute_cases_contract_id_fkey",
+    "definition": "ALTER TABLE work.dispute_cases ADD CONSTRAINT dispute_cases_contract_id_fkey FOREIGN KEY (contract_id) REFERENCES work.contracts(id) ON DELETE CASCADE;"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "dispute_cases_execution_unit_id_fkey",
+    "definition": "ALTER TABLE work.dispute_cases ADD CONSTRAINT dispute_cases_execution_unit_id_fkey FOREIGN KEY (execution_unit_id) REFERENCES work.work_execution_units(id) ON DELETE SET NULL;"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "dispute_cases_pkey",
+    "definition": "ALTER TABLE work.dispute_cases ADD CONSTRAINT dispute_cases_pkey PRIMARY KEY (id);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "dispute_cases_raised_by_entity_id_fkey",
+    "definition": "ALTER TABLE work.dispute_cases ADD CONSTRAINT dispute_cases_raised_by_entity_id_fkey FOREIGN KEY (raised_by_entity_id) REFERENCES ecosystem.entities(id);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "dispute_cases_resolved_by_entity_id_fkey",
+    "definition": "ALTER TABLE work.dispute_cases ADD CONSTRAINT dispute_cases_resolved_by_entity_id_fkey FOREIGN KEY (resolved_by_entity_id) REFERENCES ecosystem.entities(id);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "dispute_evidence_dispute_id_fkey",
+    "definition": "ALTER TABLE work.dispute_evidence ADD CONSTRAINT dispute_evidence_dispute_id_fkey FOREIGN KEY (dispute_id) REFERENCES work.dispute_cases(id) ON DELETE CASCADE;"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "dispute_evidence_pkey",
+    "definition": "ALTER TABLE work.dispute_evidence ADD CONSTRAINT dispute_evidence_pkey PRIMARY KEY (id);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "dispute_evidence_submitted_by_entity_id_fkey",
+    "definition": "ALTER TABLE work.dispute_evidence ADD CONSTRAINT dispute_evidence_submitted_by_entity_id_fkey FOREIGN KEY (submitted_by_entity_id) REFERENCES ecosystem.entities(id);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "dispute_hearings_dispute_id_fkey",
+    "definition": "ALTER TABLE work.dispute_hearings ADD CONSTRAINT dispute_hearings_dispute_id_fkey FOREIGN KEY (dispute_id) REFERENCES work.dispute_cases(id) ON DELETE CASCADE;"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "dispute_hearings_pkey",
+    "definition": "ALTER TABLE work.dispute_hearings ADD CONSTRAINT dispute_hearings_pkey PRIMARY KEY (id);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "dispute_resolution_actions_dispute_id_fkey",
+    "definition": "ALTER TABLE work.dispute_resolution_actions ADD CONSTRAINT dispute_resolution_actions_dispute_id_fkey FOREIGN KEY (dispute_id) REFERENCES work.dispute_cases(id) ON DELETE CASCADE;"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "dispute_resolution_actions_pkey",
+    "definition": "ALTER TABLE work.dispute_resolution_actions ADD CONSTRAINT dispute_resolution_actions_pkey PRIMARY KEY (id);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "event_outbox_idempotency_key_unique",
+    "definition": "ALTER TABLE work.event_outbox ADD CONSTRAINT event_outbox_idempotency_key_unique UNIQUE (idempotency_key);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "event_outbox_pkey",
+    "definition": "ALTER TABLE work.event_outbox ADD CONSTRAINT event_outbox_pkey PRIMARY KEY (id);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "event_outbox_processed_pkey",
+    "definition": "ALTER TABLE work.event_outbox_processed ADD CONSTRAINT event_outbox_processed_pkey PRIMARY KEY (idempotency_key);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "execution_logs_pkey",
+    "definition": "ALTER TABLE work.execution_logs ADD CONSTRAINT execution_logs_pkey PRIMARY KEY (id);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "fk_approvals_contract",
+    "definition": "ALTER TABLE work.contract_approvals ADD CONSTRAINT fk_approvals_contract FOREIGN KEY (contract_id) REFERENCES work.contracts(id) ON DELETE CASCADE;"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "fk_contract_asset",
+    "definition": "ALTER TABLE work.contracts ADD CONSTRAINT fk_contract_asset FOREIGN KEY (asset_code) REFERENCES app_wallet.assets(code);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "fk_contract_created_by",
+    "definition": "ALTER TABLE work.contracts ADD CONSTRAINT fk_contract_created_by FOREIGN KEY (created_by_entity_id) REFERENCES ecosystem.entities(id);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "fk_contract_owned_by",
+    "definition": "ALTER TABLE work.contracts ADD CONSTRAINT fk_contract_owned_by FOREIGN KEY (owned_by_entity_id) REFERENCES ecosystem.entities(id);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "fk_exec_logs_contract",
+    "definition": "ALTER TABLE work.execution_logs ADD CONSTRAINT fk_exec_logs_contract FOREIGN KEY (contract_id) REFERENCES work.contracts(id) ON DELETE CASCADE;"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "fk_exec_logs_performer",
+    "definition": "ALTER TABLE work.execution_logs ADD CONSTRAINT fk_exec_logs_performer FOREIGN KEY (performed_by_entity_id) REFERENCES ecosystem.entities(id);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "fk_exec_units_assignee",
+    "definition": "ALTER TABLE work.work_execution_units ADD CONSTRAINT fk_exec_units_assignee FOREIGN KEY (assigned_entity_id) REFERENCES ecosystem.entities(id);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "fk_financial_contract",
+    "definition": "ALTER TABLE work.work_financial_routes ADD CONSTRAINT fk_financial_contract FOREIGN KEY (contract_id) REFERENCES work.contracts(id) ON DELETE CASCADE;"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "fk_links_child",
+    "definition": "ALTER TABLE work.contract_links ADD CONSTRAINT fk_links_child FOREIGN KEY (child_contract_id) REFERENCES work.contracts(id) ON DELETE CASCADE;"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "fk_links_parent",
+    "definition": "ALTER TABLE work.contract_links ADD CONSTRAINT fk_links_parent FOREIGN KEY (parent_contract_id) REFERENCES work.contracts(id) ON DELETE CASCADE;"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "fk_messages_sender",
+    "definition": "ALTER TABLE work.contract_messages ADD CONSTRAINT fk_messages_sender FOREIGN KEY (sender_entity_id) REFERENCES ecosystem.entities(id);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "fk_participant_contract",
+    "definition": "ALTER TABLE work.contract_participants ADD CONSTRAINT fk_participant_contract FOREIGN KEY (contract_id) REFERENCES work.contracts(id) ON DELETE CASCADE;"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "fk_participant_entity",
+    "definition": "ALTER TABLE work.contract_participants ADD CONSTRAINT fk_participant_entity FOREIGN KEY (entity_id) REFERENCES ecosystem.entities(id);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "fk_participant_parent",
+    "definition": "ALTER TABLE work.contract_participants ADD CONSTRAINT fk_participant_parent FOREIGN KEY (parent_participant_id) REFERENCES work.contract_participants(id) ON DELETE SET NULL;"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "fk_permissions_contract",
+    "definition": "ALTER TABLE work.contract_permissions ADD CONSTRAINT fk_permissions_contract FOREIGN KEY (contract_id) REFERENCES work.contracts(id) ON DELETE CASCADE;"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "fk_versions_contract",
+    "definition": "ALTER TABLE work.work_contract_versions ADD CONSTRAINT fk_versions_contract FOREIGN KEY (contract_id) REFERENCES work.contracts(id) ON DELETE CASCADE;"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "fk_visibility_contract",
+    "definition": "ALTER TABLE work.work_visibility ADD CONSTRAINT fk_visibility_contract FOREIGN KEY (contract_id) REFERENCES work.contracts(id) ON DELETE CASCADE;"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "permission_evaluation_log_pkey",
+    "definition": "ALTER TABLE work.permission_evaluation_log ADD CONSTRAINT permission_evaluation_log_pkey PRIMARY KEY (id);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "permission_policies_pkey",
+    "definition": "ALTER TABLE work.permission_policies ADD CONSTRAINT permission_policies_pkey PRIMARY KEY (id);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "policy_assignments_pkey",
+    "definition": "ALTER TABLE work.policy_assignments ADD CONSTRAINT policy_assignments_pkey PRIMARY KEY (id);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "policy_assignments_policy_id_fkey",
+    "definition": "ALTER TABLE work.policy_assignments ADD CONSTRAINT policy_assignments_policy_id_fkey FOREIGN KEY (policy_id) REFERENCES work.permission_policies(id) ON DELETE CASCADE;"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "policy_conditions_pkey",
+    "definition": "ALTER TABLE work.policy_conditions ADD CONSTRAINT policy_conditions_pkey PRIMARY KEY (id);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "policy_conditions_policy_id_fkey",
+    "definition": "ALTER TABLE work.policy_conditions ADD CONSTRAINT policy_conditions_policy_id_fkey FOREIGN KEY (policy_id) REFERENCES work.permission_policies(id) ON DELETE CASCADE;"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "state_machines_entity_type_key",
+    "definition": "ALTER TABLE work.state_machines ADD CONSTRAINT state_machines_entity_type_key UNIQUE (entity_type);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "state_machines_pkey",
+    "definition": "ALTER TABLE work.state_machines ADD CONSTRAINT state_machines_pkey PRIMARY KEY (id);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "state_transition_history_pkey",
+    "definition": "ALTER TABLE work.state_transition_history ADD CONSTRAINT state_transition_history_pkey PRIMARY KEY (id);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "state_transition_rules_entity_type_from_state_to_state_key",
+    "definition": "ALTER TABLE work.state_transition_rules ADD CONSTRAINT state_transition_rules_entity_type_from_state_to_state_key UNIQUE (entity_type, from_state, to_state);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "state_transition_rules_pkey",
+    "definition": "ALTER TABLE work.state_transition_rules ADD CONSTRAINT state_transition_rules_pkey PRIMARY KEY (id);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "uq_contract_participant_role",
+    "definition": "ALTER TABLE work.contract_participants ADD CONSTRAINT uq_contract_participant_role UNIQUE (contract_id, entity_id, role);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "uq_contract_permission",
+    "definition": "ALTER TABLE work.contract_permissions ADD CONSTRAINT uq_contract_permission UNIQUE (contract_id, entity_id, permission);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "uq_contract_version",
+    "definition": "ALTER TABLE work.work_contract_versions ADD CONSTRAINT uq_contract_version UNIQUE (contract_id, version_no);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "uq_execution_log_event",
+    "definition": "ALTER TABLE work.execution_logs ADD CONSTRAINT uq_execution_log_event UNIQUE (contract_id, event_type, target_entity_id, target_entity_type);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "uq_execution_log_idempotent",
+    "definition": "ALTER TABLE work.execution_logs ADD CONSTRAINT uq_execution_log_idempotent UNIQUE (idempotency_key);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "uq_execution_unit_sequence",
+    "definition": "ALTER TABLE work.work_execution_units ADD CONSTRAINT uq_execution_unit_sequence UNIQUE (contract_id, sequence_no);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "uq_execution_unit_title_per_contract",
+    "definition": "ALTER TABLE work.work_execution_units ADD CONSTRAINT uq_execution_unit_title_per_contract UNIQUE (contract_id, title);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "uq_financial_route",
+    "definition": "ALTER TABLE work.work_financial_routes ADD CONSTRAINT uq_financial_route UNIQUE (contract_id, payer_entity_id, payee_entity_id, beneficiary_type);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "uq_visibility_rule",
+    "definition": "ALTER TABLE work.work_visibility ADD CONSTRAINT uq_visibility_rule UNIQUE (contract_id, viewer_entity_id, visible_entity_id, visibility_type);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "work_contract_versions_pkey",
+    "definition": "ALTER TABLE work.work_contract_versions ADD CONSTRAINT work_contract_versions_pkey PRIMARY KEY (id);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "work_execution_units_assigned_by_entity_id_fkey",
+    "definition": "ALTER TABLE work.work_execution_units ADD CONSTRAINT work_execution_units_assigned_by_entity_id_fkey FOREIGN KEY (assigned_by_entity_id) REFERENCES ecosystem.entities(id);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "work_execution_units_pkey",
+    "definition": "ALTER TABLE work.work_execution_units ADD CONSTRAINT work_execution_units_pkey PRIMARY KEY (id);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "work_financial_routes_pkey",
+    "definition": "ALTER TABLE work.work_financial_routes ADD CONSTRAINT work_financial_routes_pkey PRIMARY KEY (id);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "work_ownership_transfers_pkey",
+    "definition": "ALTER TABLE work.work_ownership_transfers ADD CONSTRAINT work_ownership_transfers_pkey PRIMARY KEY (id);"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "work_ownership_transfers_propagation_status_check",
+    "definition": "ALTER TABLE work.work_ownership_transfers ADD CONSTRAINT work_ownership_transfers_propagation_status_check CHECK ((propagation_status = ANY (ARRAY['pending'::text, 'in_progress'::text, 'completed'::text, 'failed'::text])));"
+  },
+  {
+    "object_type": "CONSTRAINT",
+    "schema_name": "work",
+    "object_name": "work_visibility_pkey",
+    "definition": "ALTER TABLE work.work_visibility ADD CONSTRAINT work_visibility_pkey PRIMARY KEY (id);"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "approval_step_assignees.created_at",
+    "definition": "ALTER TABLE work.approval_step_assignees ALTER COLUMN created_at SET DEFAULT now();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "approval_step_assignees.id",
+    "definition": "ALTER TABLE work.approval_step_assignees ALTER COLUMN id SET DEFAULT gen_random_uuid();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "approval_step_assignees.weight",
+    "definition": "ALTER TABLE work.approval_step_assignees ALTER COLUMN weight SET DEFAULT 1;"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "approval_workflow_steps.completion_policy",
+    "definition": "ALTER TABLE work.approval_workflow_steps ALTER COLUMN completion_policy SET DEFAULT 'all'::text;"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "approval_workflow_steps.created_at",
+    "definition": "ALTER TABLE work.approval_workflow_steps ALTER COLUMN created_at SET DEFAULT now();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "approval_workflow_steps.id",
+    "definition": "ALTER TABLE work.approval_workflow_steps ALTER COLUMN id SET DEFAULT gen_random_uuid();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "approval_workflow_steps.is_mandatory",
+    "definition": "ALTER TABLE work.approval_workflow_steps ALTER COLUMN is_mandatory SET DEFAULT true;"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "approval_workflow_templates.created_at",
+    "definition": "ALTER TABLE work.approval_workflow_templates ALTER COLUMN created_at SET DEFAULT now();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "approval_workflow_templates.id",
+    "definition": "ALTER TABLE work.approval_workflow_templates ALTER COLUMN id SET DEFAULT gen_random_uuid();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "approval_workflow_templates.is_default",
+    "definition": "ALTER TABLE work.approval_workflow_templates ALTER COLUMN is_default SET DEFAULT false;"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "contract_approval_workflows.current_step_index",
+    "definition": "ALTER TABLE work.contract_approval_workflows ALTER COLUMN current_step_index SET DEFAULT 1;"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "contract_approval_workflows.id",
+    "definition": "ALTER TABLE work.contract_approval_workflows ALTER COLUMN id SET DEFAULT gen_random_uuid();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "contract_approval_workflows.started_at",
+    "definition": "ALTER TABLE work.contract_approval_workflows ALTER COLUMN started_at SET DEFAULT now();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "contract_approval_workflows.status",
+    "definition": "ALTER TABLE work.contract_approval_workflows ALTER COLUMN status SET DEFAULT 'active'::text;"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "contract_approvals.created_at",
+    "definition": "ALTER TABLE work.contract_approvals ALTER COLUMN created_at SET DEFAULT now();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "contract_approvals.id",
+    "definition": "ALTER TABLE work.contract_approvals ALTER COLUMN id SET DEFAULT gen_random_uuid();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "contract_approvals.status",
+    "definition": "ALTER TABLE work.contract_approvals ALTER COLUMN status SET DEFAULT 'pending'::work.approval_status;"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "contract_approvals.updated_at",
+    "definition": "ALTER TABLE work.contract_approvals ALTER COLUMN updated_at SET DEFAULT now();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "contract_links.created_at",
+    "definition": "ALTER TABLE work.contract_links ALTER COLUMN created_at SET DEFAULT now();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "contract_links.id",
+    "definition": "ALTER TABLE work.contract_links ALTER COLUMN id SET DEFAULT gen_random_uuid();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "contract_messages.created_at",
+    "definition": "ALTER TABLE work.contract_messages ALTER COLUMN created_at SET DEFAULT now();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "contract_messages.id",
+    "definition": "ALTER TABLE work.contract_messages ALTER COLUMN id SET DEFAULT gen_random_uuid();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "contract_messages.message_type",
+    "definition": "ALTER TABLE work.contract_messages ALTER COLUMN message_type SET DEFAULT 'text'::work.message_type;"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "contract_ownership_history.created_at",
+    "definition": "ALTER TABLE work.contract_ownership_history ALTER COLUMN created_at SET DEFAULT now();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "contract_ownership_history.id",
+    "definition": "ALTER TABLE work.contract_ownership_history ALTER COLUMN id SET DEFAULT gen_random_uuid();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "contract_ownership_history.updated_at",
+    "definition": "ALTER TABLE work.contract_ownership_history ALTER COLUMN updated_at SET DEFAULT now();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "contract_participants.created_at",
+    "definition": "ALTER TABLE work.contract_participants ALTER COLUMN created_at SET DEFAULT now();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "contract_participants.id",
+    "definition": "ALTER TABLE work.contract_participants ALTER COLUMN id SET DEFAULT gen_random_uuid();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "contract_participants.joined_at",
+    "definition": "ALTER TABLE work.contract_participants ALTER COLUMN joined_at SET DEFAULT now();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "contract_participants.participation_mode",
+    "definition": "ALTER TABLE work.contract_participants ALTER COLUMN participation_mode SET DEFAULT 'direct'::work.participation_mode;"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "contract_participants.status",
+    "definition": "ALTER TABLE work.contract_participants ALTER COLUMN status SET DEFAULT 'active'::work.participant_status;"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "contract_participants.updated_at",
+    "definition": "ALTER TABLE work.contract_participants ALTER COLUMN updated_at SET DEFAULT now();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "contract_participants.visibility_scope",
+    "definition": "ALTER TABLE work.contract_participants ALTER COLUMN visibility_scope SET DEFAULT 'internal'::work.visibility_scope;"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "contract_permissions.created_at",
+    "definition": "ALTER TABLE work.contract_permissions ALTER COLUMN created_at SET DEFAULT now();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "contract_permissions.id",
+    "definition": "ALTER TABLE work.contract_permissions ALTER COLUMN id SET DEFAULT gen_random_uuid();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "contracts.created_at",
+    "definition": "ALTER TABLE work.contracts ALTER COLUMN created_at SET DEFAULT now();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "contracts.current_version_no",
+    "definition": "ALTER TABLE work.contracts ALTER COLUMN current_version_no SET DEFAULT 1;"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "contracts.has_open_dispute",
+    "definition": "ALTER TABLE work.contracts ALTER COLUMN has_open_dispute SET DEFAULT false;"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "contracts.id",
+    "definition": "ALTER TABLE work.contracts ALTER COLUMN id SET DEFAULT gen_random_uuid();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "contracts.status",
+    "definition": "ALTER TABLE work.contracts ALTER COLUMN status SET DEFAULT 'draft'::work.contract_status;"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "contracts.total_amount",
+    "definition": "ALTER TABLE work.contracts ALTER COLUMN total_amount SET DEFAULT 0;"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "contracts.updated_at",
+    "definition": "ALTER TABLE work.contracts ALTER COLUMN updated_at SET DEFAULT now();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "contracts.visibility_mode",
+    "definition": "ALTER TABLE work.contracts ALTER COLUMN visibility_mode SET DEFAULT 'internal'::work.contract_visibility_mode;"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "dispute_cases.created_at",
+    "definition": "ALTER TABLE work.dispute_cases ALTER COLUMN created_at SET DEFAULT now();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "dispute_cases.id",
+    "definition": "ALTER TABLE work.dispute_cases ALTER COLUMN id SET DEFAULT gen_random_uuid();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "dispute_cases.raised_at",
+    "definition": "ALTER TABLE work.dispute_cases ALTER COLUMN raised_at SET DEFAULT now();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "dispute_cases.status",
+    "definition": "ALTER TABLE work.dispute_cases ALTER COLUMN status SET DEFAULT 'open'::work.dispute_status;"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "dispute_cases.updated_at",
+    "definition": "ALTER TABLE work.dispute_cases ALTER COLUMN updated_at SET DEFAULT now();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "dispute_evidence.id",
+    "definition": "ALTER TABLE work.dispute_evidence ALTER COLUMN id SET DEFAULT gen_random_uuid();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "dispute_evidence.submitted_at",
+    "definition": "ALTER TABLE work.dispute_evidence ALTER COLUMN submitted_at SET DEFAULT now();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "dispute_hearings.created_at",
+    "definition": "ALTER TABLE work.dispute_hearings ALTER COLUMN created_at SET DEFAULT now();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "dispute_hearings.id",
+    "definition": "ALTER TABLE work.dispute_hearings ALTER COLUMN id SET DEFAULT gen_random_uuid();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "dispute_hearings.is_online",
+    "definition": "ALTER TABLE work.dispute_hearings ALTER COLUMN is_online SET DEFAULT false;"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "dispute_resolution_actions.applied",
+    "definition": "ALTER TABLE work.dispute_resolution_actions ALTER COLUMN applied SET DEFAULT false;"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "dispute_resolution_actions.id",
+    "definition": "ALTER TABLE work.dispute_resolution_actions ALTER COLUMN id SET DEFAULT gen_random_uuid();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "event_outbox.created_at",
+    "definition": "ALTER TABLE work.event_outbox ALTER COLUMN created_at SET DEFAULT now();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "event_outbox.event_version",
+    "definition": "ALTER TABLE work.event_outbox ALTER COLUMN event_version SET DEFAULT 1;"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "event_outbox.id",
+    "definition": "ALTER TABLE work.event_outbox ALTER COLUMN id SET DEFAULT gen_random_uuid();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "event_outbox.idempotency_key",
+    "definition": "ALTER TABLE work.event_outbox ALTER COLUMN idempotency_key SET DEFAULT gen_random_uuid();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "event_outbox.retry_count",
+    "definition": "ALTER TABLE work.event_outbox ALTER COLUMN retry_count SET DEFAULT 0;"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "event_outbox.status",
+    "definition": "ALTER TABLE work.event_outbox ALTER COLUMN status SET DEFAULT 'pending'::text;"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "event_outbox_processed.processed_at",
+    "definition": "ALTER TABLE work.event_outbox_processed ALTER COLUMN processed_at SET DEFAULT now();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "execution_logs.created_at",
+    "definition": "ALTER TABLE work.execution_logs ALTER COLUMN created_at SET DEFAULT now();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "execution_logs.id",
+    "definition": "ALTER TABLE work.execution_logs ALTER COLUMN id SET DEFAULT gen_random_uuid();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "execution_logs.idempotency_key",
+    "definition": "ALTER TABLE work.execution_logs ALTER COLUMN idempotency_key SET DEFAULT gen_random_uuid();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "permission_evaluation_log.evaluated_at",
+    "definition": "ALTER TABLE work.permission_evaluation_log ALTER COLUMN evaluated_at SET DEFAULT now();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "permission_evaluation_log.id",
+    "definition": "ALTER TABLE work.permission_evaluation_log ALTER COLUMN id SET DEFAULT gen_random_uuid();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "permission_policies.effect",
+    "definition": "ALTER TABLE work.permission_policies ALTER COLUMN effect SET DEFAULT 'allow'::text;"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "permission_policies.enabled",
+    "definition": "ALTER TABLE work.permission_policies ALTER COLUMN enabled SET DEFAULT true;"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "permission_policies.id",
+    "definition": "ALTER TABLE work.permission_policies ALTER COLUMN id SET DEFAULT gen_random_uuid();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "permission_policies.priority",
+    "definition": "ALTER TABLE work.permission_policies ALTER COLUMN priority SET DEFAULT 0;"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "policy_assignments.id",
+    "definition": "ALTER TABLE work.policy_assignments ALTER COLUMN id SET DEFAULT gen_random_uuid();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "policy_conditions.created_at",
+    "definition": "ALTER TABLE work.policy_conditions ALTER COLUMN created_at SET DEFAULT now();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "policy_conditions.id",
+    "definition": "ALTER TABLE work.policy_conditions ALTER COLUMN id SET DEFAULT gen_random_uuid();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "state_machines.created_at",
+    "definition": "ALTER TABLE work.state_machines ALTER COLUMN created_at SET DEFAULT now();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "state_machines.id",
+    "definition": "ALTER TABLE work.state_machines ALTER COLUMN id SET DEFAULT gen_random_uuid();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "state_transition_history.created_at",
+    "definition": "ALTER TABLE work.state_transition_history ALTER COLUMN created_at SET DEFAULT now();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "state_transition_history.id",
+    "definition": "ALTER TABLE work.state_transition_history ALTER COLUMN id SET DEFAULT gen_random_uuid();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "state_transition_rules.created_at",
+    "definition": "ALTER TABLE work.state_transition_rules ALTER COLUMN created_at SET DEFAULT now();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "state_transition_rules.id",
+    "definition": "ALTER TABLE work.state_transition_rules ALTER COLUMN id SET DEFAULT gen_random_uuid();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "state_transition_rules.priority",
+    "definition": "ALTER TABLE work.state_transition_rules ALTER COLUMN priority SET DEFAULT 0;"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "work_contract_versions.created_at",
+    "definition": "ALTER TABLE work.work_contract_versions ALTER COLUMN created_at SET DEFAULT now();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "work_contract_versions.id",
+    "definition": "ALTER TABLE work.work_contract_versions ALTER COLUMN id SET DEFAULT gen_random_uuid();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "work_execution_units.created_at",
+    "definition": "ALTER TABLE work.work_execution_units ALTER COLUMN created_at SET DEFAULT now();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "work_execution_units.id",
+    "definition": "ALTER TABLE work.work_execution_units ALTER COLUMN id SET DEFAULT gen_random_uuid();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "work_execution_units.is_milestone",
+    "definition": "ALTER TABLE work.work_execution_units ALTER COLUMN is_milestone SET DEFAULT false;"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "work_execution_units.progress_percent",
+    "definition": "ALTER TABLE work.work_execution_units ALTER COLUMN progress_percent SET DEFAULT 0;"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "work_execution_units.status",
+    "definition": "ALTER TABLE work.work_execution_units ALTER COLUMN status SET DEFAULT 'pending'::work.execution_unit_status;"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "work_execution_units.unit_type",
+    "definition": "ALTER TABLE work.work_execution_units ALTER COLUMN unit_type SET DEFAULT 'task'::work.unit_type;"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "work_execution_units.updated_at",
+    "definition": "ALTER TABLE work.work_execution_units ALTER COLUMN updated_at SET DEFAULT now();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "work_financial_routes.created_at",
+    "definition": "ALTER TABLE work.work_financial_routes ALTER COLUMN created_at SET DEFAULT now();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "work_financial_routes.id",
+    "definition": "ALTER TABLE work.work_financial_routes ALTER COLUMN id SET DEFAULT gen_random_uuid();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "work_financial_routes.is_hidden",
+    "definition": "ALTER TABLE work.work_financial_routes ALTER COLUMN is_hidden SET DEFAULT false;"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "work_financial_routes.priority",
+    "definition": "ALTER TABLE work.work_financial_routes ALTER COLUMN priority SET DEFAULT 0;"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "work_ownership_transfers.apply_effects",
+    "definition": "ALTER TABLE work.work_ownership_transfers ALTER COLUMN apply_effects SET DEFAULT true;"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "work_ownership_transfers.created_at",
+    "definition": "ALTER TABLE work.work_ownership_transfers ALTER COLUMN created_at SET DEFAULT now();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "work_ownership_transfers.effective_at",
+    "definition": "ALTER TABLE work.work_ownership_transfers ALTER COLUMN effective_at SET DEFAULT now();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "work_ownership_transfers.id",
+    "definition": "ALTER TABLE work.work_ownership_transfers ALTER COLUMN id SET DEFAULT gen_random_uuid();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "work_ownership_transfers.propagation_status",
+    "definition": "ALTER TABLE work.work_ownership_transfers ALTER COLUMN propagation_status SET DEFAULT 'pending'::text;"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "work_ownership_transfers.transfer_scope",
+    "definition": "ALTER TABLE work.work_ownership_transfers ALTER COLUMN transfer_scope SET DEFAULT 'full'::work.transfer_scope;"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "work_ownership_transfers.updated_at",
+    "definition": "ALTER TABLE work.work_ownership_transfers ALTER COLUMN updated_at SET DEFAULT now();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "work_visibility.created_at",
+    "definition": "ALTER TABLE work.work_visibility ALTER COLUMN created_at SET DEFAULT now();"
+  },
+  {
+    "object_type": "DEFAULT",
+    "schema_name": "work",
+    "object_name": "work_visibility.id",
+    "definition": "ALTER TABLE work.work_visibility ALTER COLUMN id SET DEFAULT gen_random_uuid();"
+  },
+  {
     "object_type": "ENUM",
     "schema_name": "work",
     "object_name": "action_type",
@@ -142,6 +1330,36 @@
     "schema_name": "work",
     "object_name": "visibility_type",
     "definition": "CREATE TYPE work.visibility_type AS ENUM ('full', 'financial_only', 'timeline_only', 'restricted');"
+  },
+  {
+    "object_type": "EXTENSION",
+    "schema_name": "extensions",
+    "object_name": "pg_stat_statements",
+    "definition": "CREATE EXTENSION IF NOT EXISTS pg_stat_statements;"
+  },
+  {
+    "object_type": "EXTENSION",
+    "schema_name": "extensions",
+    "object_name": "pgcrypto",
+    "definition": "CREATE EXTENSION IF NOT EXISTS pgcrypto;"
+  },
+  {
+    "object_type": "EXTENSION",
+    "schema_name": "pg_catalog",
+    "object_name": "plpgsql",
+    "definition": "CREATE EXTENSION IF NOT EXISTS plpgsql;"
+  },
+  {
+    "object_type": "EXTENSION",
+    "schema_name": "vault",
+    "object_name": "supabase_vault",
+    "definition": "CREATE EXTENSION IF NOT EXISTS supabase_vault;"
+  },
+  {
+    "object_type": "EXTENSION",
+    "schema_name": "extensions",
+    "object_name": "uuid-ossp",
+    "definition": "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"
   },
   {
     "object_type": "FUNCTION",
@@ -790,6 +2008,186 @@
     "schema_name": "work",
     "object_name": "work_visibility_pkey",
     "definition": "CREATE UNIQUE INDEX work_visibility_pkey ON work.work_visibility USING btree (id);"
+  },
+  {
+    "object_type": "RLS",
+    "schema_name": "work",
+    "object_name": "approval_step_assignees",
+    "definition": "ALTER TABLE work.approval_step_assignees ENABLE ROW LEVEL SECURITY;"
+  },
+  {
+    "object_type": "RLS",
+    "schema_name": "work",
+    "object_name": "approval_workflow_steps",
+    "definition": "ALTER TABLE work.approval_workflow_steps ENABLE ROW LEVEL SECURITY;"
+  },
+  {
+    "object_type": "RLS",
+    "schema_name": "work",
+    "object_name": "approval_workflow_templates",
+    "definition": "ALTER TABLE work.approval_workflow_templates ENABLE ROW LEVEL SECURITY;"
+  },
+  {
+    "object_type": "RLS",
+    "schema_name": "work",
+    "object_name": "contract_approval_workflows",
+    "definition": "ALTER TABLE work.contract_approval_workflows ENABLE ROW LEVEL SECURITY;"
+  },
+  {
+    "object_type": "RLS",
+    "schema_name": "work",
+    "object_name": "contract_approvals",
+    "definition": "ALTER TABLE work.contract_approvals ENABLE ROW LEVEL SECURITY;"
+  },
+  {
+    "object_type": "RLS",
+    "schema_name": "work",
+    "object_name": "contract_links",
+    "definition": "ALTER TABLE work.contract_links ENABLE ROW LEVEL SECURITY;"
+  },
+  {
+    "object_type": "RLS",
+    "schema_name": "work",
+    "object_name": "contract_messages",
+    "definition": "ALTER TABLE work.contract_messages ENABLE ROW LEVEL SECURITY;"
+  },
+  {
+    "object_type": "RLS",
+    "schema_name": "work",
+    "object_name": "contract_ownership_history",
+    "definition": "ALTER TABLE work.contract_ownership_history ENABLE ROW LEVEL SECURITY;"
+  },
+  {
+    "object_type": "RLS",
+    "schema_name": "work",
+    "object_name": "contract_participants",
+    "definition": "ALTER TABLE work.contract_participants ENABLE ROW LEVEL SECURITY;"
+  },
+  {
+    "object_type": "RLS",
+    "schema_name": "work",
+    "object_name": "contract_permissions",
+    "definition": "ALTER TABLE work.contract_permissions ENABLE ROW LEVEL SECURITY;"
+  },
+  {
+    "object_type": "RLS",
+    "schema_name": "work",
+    "object_name": "contracts",
+    "definition": "ALTER TABLE work.contracts ENABLE ROW LEVEL SECURITY;"
+  },
+  {
+    "object_type": "RLS",
+    "schema_name": "work",
+    "object_name": "dispute_cases",
+    "definition": "ALTER TABLE work.dispute_cases ENABLE ROW LEVEL SECURITY;"
+  },
+  {
+    "object_type": "RLS",
+    "schema_name": "work",
+    "object_name": "dispute_evidence",
+    "definition": "ALTER TABLE work.dispute_evidence ENABLE ROW LEVEL SECURITY;"
+  },
+  {
+    "object_type": "RLS",
+    "schema_name": "work",
+    "object_name": "dispute_hearings",
+    "definition": "ALTER TABLE work.dispute_hearings ENABLE ROW LEVEL SECURITY;"
+  },
+  {
+    "object_type": "RLS",
+    "schema_name": "work",
+    "object_name": "dispute_resolution_actions",
+    "definition": "ALTER TABLE work.dispute_resolution_actions ENABLE ROW LEVEL SECURITY;"
+  },
+  {
+    "object_type": "RLS",
+    "schema_name": "work",
+    "object_name": "event_outbox",
+    "definition": "ALTER TABLE work.event_outbox ENABLE ROW LEVEL SECURITY;"
+  },
+  {
+    "object_type": "RLS",
+    "schema_name": "work",
+    "object_name": "event_outbox_processed",
+    "definition": "ALTER TABLE work.event_outbox_processed ENABLE ROW LEVEL SECURITY;"
+  },
+  {
+    "object_type": "RLS",
+    "schema_name": "work",
+    "object_name": "execution_logs",
+    "definition": "ALTER TABLE work.execution_logs ENABLE ROW LEVEL SECURITY;"
+  },
+  {
+    "object_type": "RLS",
+    "schema_name": "work",
+    "object_name": "permission_evaluation_log",
+    "definition": "ALTER TABLE work.permission_evaluation_log ENABLE ROW LEVEL SECURITY;"
+  },
+  {
+    "object_type": "RLS",
+    "schema_name": "work",
+    "object_name": "permission_policies",
+    "definition": "ALTER TABLE work.permission_policies ENABLE ROW LEVEL SECURITY;"
+  },
+  {
+    "object_type": "RLS",
+    "schema_name": "work",
+    "object_name": "policy_assignments",
+    "definition": "ALTER TABLE work.policy_assignments ENABLE ROW LEVEL SECURITY;"
+  },
+  {
+    "object_type": "RLS",
+    "schema_name": "work",
+    "object_name": "policy_conditions",
+    "definition": "ALTER TABLE work.policy_conditions ENABLE ROW LEVEL SECURITY;"
+  },
+  {
+    "object_type": "RLS",
+    "schema_name": "work",
+    "object_name": "state_machines",
+    "definition": "ALTER TABLE work.state_machines ENABLE ROW LEVEL SECURITY;"
+  },
+  {
+    "object_type": "RLS",
+    "schema_name": "work",
+    "object_name": "state_transition_history",
+    "definition": "ALTER TABLE work.state_transition_history ENABLE ROW LEVEL SECURITY;"
+  },
+  {
+    "object_type": "RLS",
+    "schema_name": "work",
+    "object_name": "state_transition_rules",
+    "definition": "ALTER TABLE work.state_transition_rules ENABLE ROW LEVEL SECURITY;"
+  },
+  {
+    "object_type": "RLS",
+    "schema_name": "work",
+    "object_name": "work_contract_versions",
+    "definition": "ALTER TABLE work.work_contract_versions ENABLE ROW LEVEL SECURITY;"
+  },
+  {
+    "object_type": "RLS",
+    "schema_name": "work",
+    "object_name": "work_execution_units",
+    "definition": "ALTER TABLE work.work_execution_units ENABLE ROW LEVEL SECURITY;"
+  },
+  {
+    "object_type": "RLS",
+    "schema_name": "work",
+    "object_name": "work_financial_routes",
+    "definition": "ALTER TABLE work.work_financial_routes ENABLE ROW LEVEL SECURITY;"
+  },
+  {
+    "object_type": "RLS",
+    "schema_name": "work",
+    "object_name": "work_ownership_transfers",
+    "definition": "ALTER TABLE work.work_ownership_transfers ENABLE ROW LEVEL SECURITY;"
+  },
+  {
+    "object_type": "RLS",
+    "schema_name": "work",
+    "object_name": "work_visibility",
+    "definition": "ALTER TABLE work.work_visibility ENABLE ROW LEVEL SECURITY;"
   },
   {
     "object_type": "TABLE",
