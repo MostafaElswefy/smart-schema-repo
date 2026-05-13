@@ -1693,4 +1693,5 @@
     "definition": "COMMENT ON COLUMN work.work_financial_routes.beneficiary_type IS 'Determines who receives the money: \"payer\", \"payee\", \"both\", \"platform\".';",
     "sort_order": 13
   }
+
 ]
