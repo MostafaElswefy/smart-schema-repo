@@ -1,3 +1,65 @@
+/*
+|--------------------------------------------------------------------------
+| FILE: 02_tables.sql
+|--------------------------------------------------------------------------
+|
+| PURPOSE:
+| يحتوي على جميع الجداول الأساسية داخل الـ schema.
+|
+| CONTENTS:
+| - CREATE TABLE
+| - Columns
+| - Primary Keys
+| - Foreign Keys
+| - Constraints
+|
+| EXAMPLES:
+| - contracts
+| - contract_participants
+| - execution_logs
+|
+| WHY IMPORTANT:
+| يعتبر القلب الأساسي للبيانات داخل النظام.
+|
+|--------------------------------------------------------------------------
+*/
+
+--
+-- PostgreSQL database dump
+--
+
+\restrict Cz6DN9C1oFI4yrTd77IQdbCzMAQIPcnhHeTaU4aGYFCBkbtTVkvmhS621G5P4xE
+
+-- Dumped from database version 17.6
+-- Dumped by pg_dump version 18.3
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- Name: work; Type: SCHEMA; Schema: -; Owner: -
+--
+
+CREATE SCHEMA work;
+
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- Name: contract_approvals; Type: TABLE; Schema: work; Owner: -
+--
+
 CREATE TABLE work.contract_approvals (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     contract_id uuid NOT NULL,
@@ -12,6 +74,10 @@ CREATE TABLE work.contract_approvals (
 );
 
 
+--
+-- Name: contract_links; Type: TABLE; Schema: work; Owner: -
+--
+
 CREATE TABLE work.contract_links (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     parent_contract_id uuid NOT NULL,
@@ -21,6 +87,10 @@ CREATE TABLE work.contract_links (
     created_at timestamp with time zone DEFAULT now()
 );
 
+
+--
+-- Name: contract_messages; Type: TABLE; Schema: work; Owner: -
+--
 
 CREATE TABLE work.contract_messages (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
@@ -32,6 +102,10 @@ CREATE TABLE work.contract_messages (
     created_at timestamp with time zone DEFAULT now()
 );
 
+
+--
+-- Name: contract_milestones; Type: TABLE; Schema: work; Owner: -
+--
 
 CREATE TABLE work.contract_milestones (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
@@ -46,6 +120,10 @@ CREATE TABLE work.contract_milestones (
     created_at timestamp with time zone DEFAULT now()
 );
 
+
+--
+-- Name: contract_participants; Type: TABLE; Schema: work; Owner: -
+--
 
 CREATE TABLE work.contract_participants (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
@@ -66,6 +144,10 @@ CREATE TABLE work.contract_participants (
 );
 
 
+--
+-- Name: contract_permissions; Type: TABLE; Schema: work; Owner: -
+--
+
 CREATE TABLE work.contract_permissions (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     contract_id uuid NOT NULL,
@@ -75,6 +157,10 @@ CREATE TABLE work.contract_permissions (
     created_at timestamp with time zone DEFAULT now()
 );
 
+
+--
+-- Name: contracts; Type: TABLE; Schema: work; Owner: -
+--
 
 CREATE TABLE work.contracts (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
@@ -98,6 +184,10 @@ CREATE TABLE work.contracts (
 );
 
 
+--
+-- Name: execution_logs; Type: TABLE; Schema: work; Owner: -
+--
+
 CREATE TABLE work.execution_logs (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     contract_id uuid NOT NULL,
@@ -107,6 +197,10 @@ CREATE TABLE work.execution_logs (
     created_at timestamp with time zone DEFAULT now()
 );
 
+
+--
+-- Name: work_assignments; Type: TABLE; Schema: work; Owner: -
+--
 
 CREATE TABLE work.work_assignments (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
@@ -127,6 +221,10 @@ CREATE TABLE work.work_assignments (
 );
 
 
+--
+-- Name: work_contract_versions; Type: TABLE; Schema: work; Owner: -
+--
+
 CREATE TABLE work.work_contract_versions (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     contract_id uuid NOT NULL,
@@ -136,6 +234,10 @@ CREATE TABLE work.work_contract_versions (
     created_at timestamp with time zone DEFAULT now()
 );
 
+
+--
+-- Name: work_execution_units; Type: TABLE; Schema: work; Owner: -
+--
 
 CREATE TABLE work.work_execution_units (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
@@ -154,6 +256,10 @@ CREATE TABLE work.work_execution_units (
 );
 
 
+--
+-- Name: work_financial_routes; Type: TABLE; Schema: work; Owner: -
+--
+
 CREATE TABLE work.work_financial_routes (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     contract_id uuid NOT NULL,
@@ -169,6 +275,10 @@ CREATE TABLE work.work_financial_routes (
 );
 
 
+--
+-- Name: work_ownership_transfers; Type: TABLE; Schema: work; Owner: -
+--
+
 CREATE TABLE work.work_ownership_transfers (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     contract_id uuid NOT NULL,
@@ -182,6 +292,10 @@ CREATE TABLE work.work_ownership_transfers (
 );
 
 
+--
+-- Name: work_visibility; Type: TABLE; Schema: work; Owner: -
+--
+
 CREATE TABLE work.work_visibility (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     contract_id uuid NOT NULL,
@@ -192,4 +306,10 @@ CREATE TABLE work.work_visibility (
     metadata jsonb
 );
 
+
+--
+-- PostgreSQL database dump complete
+--
+
+\unrestrict Cz6DN9C1oFI4yrTd77IQdbCzMAQIPcnhHeTaU4aGYFCBkbtTVkvmhS621G5P4xE
 
