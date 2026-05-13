@@ -5,7 +5,7 @@
     "data": {
       "schema": "app_rewards",
       "version": "1.0.0",
-      "exported_at": "2026-05-13T20:02:21.271974+00:00",
+      "exported_at": "2026-05-13T20:13:43.40018+00:00",
       "module_name": "rewards_engine",
       "business_purpose": "Reward management and processing"
     }
@@ -793,7 +793,12 @@
           }
         ],
         "business_purpose": null,
-        "check_constraints": null,
+        "check_constraints": [
+          {
+            "name": "chk_reward_config_structure",
+            "expression": "CHECK (reward_config ? 'amount'::text OR reward_config ? 'rewards'::text) NOT VALID"
+          }
+        ],
         "unique_constraints": [
           {
             "name": "uq_event_version",
@@ -1611,6 +1616,14 @@
         ]
       },
       {
+        "name": "refresh_reward_ledger_mv",
+        "schema": "app_rewards",
+        "source": "CREATE OR REPLACE FUNCTION app_rewards.refresh_reward_ledger_mv()\n RETURNS void\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    REFRESH MATERIALIZED VIEW CONCURRENTLY app_rewards.reward_ledger_mv;\r\nEND;\r\n$function$\n",
+        "returns": "void",
+        "language": "plpgsql",
+        "arguments": null
+      },
+      {
         "name": "resolve_rule",
         "schema": "app_rewards",
         "source": "CREATE OR REPLACE FUNCTION app_rewards.resolve_rule(p_event_id uuid)\n RETURNS TABLE(rule_id uuid, rule_version integer, rule_config jsonb, rule_snapshot jsonb, starts_at timestamp with time zone, expires_at timestamp with time zone)\n LANGUAGE plpgsql\n STABLE\nAS $function$\r\nBEGIN\r\n    RETURN QUERY\r\n    SELECT\r\n        rv.id,\r\n        rv.version,\r\n        rv.reward_config,\r\n        jsonb_build_object(\r\n            'id', rv.id,\r\n            'event_id', rv.event_id,\r\n            'version', rv.version,\r\n            'reward_config', rv.reward_config,\r\n            'starts_at', rv.starts_at,\r\n            'expires_at', rv.expires_at\r\n        ) AS rule_snapshot,\r\n        rv.starts_at,\r\n        rv.expires_at\r\n    FROM app_rewards.reward_rule_versions rv\r\n    WHERE rv.event_id = p_event_id\r\n      AND rv.is_active = true\r\n      AND rv.is_deleted = false\r\n      AND (rv.starts_at IS NULL OR rv.starts_at <= now())\r\n      AND (rv.expires_at IS NULL OR rv.expires_at > now())\r\n    ORDER BY rv.version DESC\r\n    LIMIT 1;\r\nEND;\r\n$function$\n",
@@ -1751,6 +1764,14 @@
         "arguments": null
       },
       {
+        "name": "validate_reward_config_details",
+        "schema": "app_rewards",
+        "source": "CREATE OR REPLACE FUNCTION app_rewards.validate_reward_config_details()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    IF NEW.reward_config ? 'amount' AND NOT (NEW.reward_config->>'amount') ~ '^[0-9]+\\.?[0-9]*$' THEN\r\n        RAISE EXCEPTION 'Invalid amount in reward_config: %', NEW.reward_config->>'amount';\r\n    END IF;\r\n    IF NEW.reward_config ? 'rewards' AND jsonb_typeof(NEW.reward_config->'rewards') != 'array' THEN\r\n        RAISE EXCEPTION 'rewards must be an array';\r\n    END IF;\r\n    RETURN NEW;\r\nEND;\r\n$function$\n",
+        "returns": "trigger",
+        "language": "plpgsql",
+        "arguments": null
+      },
+      {
         "name": "write_audit_log",
         "schema": "app_rewards",
         "source": "CREATE OR REPLACE FUNCTION app_rewards.write_audit_log(p_rule_id uuid, p_action_type text, p_old_version integer, p_new_version integer, p_changed_by uuid, p_old_reward_config jsonb DEFAULT NULL::jsonb, p_new_reward_config jsonb DEFAULT NULL::jsonb, p_metadata jsonb DEFAULT '{}'::jsonb, p_event_id uuid DEFAULT NULL::uuid, p_transaction_id uuid DEFAULT NULL::uuid, p_request_id uuid DEFAULT NULL::uuid, p_trace_id uuid DEFAULT NULL::uuid)\n RETURNS void\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    IF p_action_type NOT IN ('create', 'update', 'activate', 'deactivate') THEN\r\n        RAISE EXCEPTION 'Invalid action_type: %', p_action_type;\r\n    END IF;\r\n\r\n    INSERT INTO app_rewards.reward_rule_audit_log (\r\n        rule_id, action_type, old_version, new_version, changed_by,\r\n        old_reward_config, new_reward_config, metadata,\r\n        event_id, transaction_id, request_id, trace_id\r\n    ) VALUES (\r\n        p_rule_id, p_action_type, p_old_version, p_new_version, p_changed_by,\r\n        p_old_reward_config, p_new_reward_config, p_metadata,\r\n        p_event_id, p_transaction_id, p_request_id, p_trace_id\r\n    );\r\nEND;\r\n$function$\n",
@@ -1813,6 +1834,12 @@
     "object_type": "triggers",
     "sort_order": 5,
     "data": [
+      {
+        "name": "trg_validate_reward_config_details",
+        "table": "reward_rule_versions",
+        "schema": "app_rewards",
+        "definition": "CREATE TRIGGER trg_validate_reward_config_details BEFORE INSERT OR UPDATE OF reward_config ON app_rewards.reward_rule_versions FOR EACH ROW EXECUTE FUNCTION app_rewards.validate_reward_config_details()"
+      },
       {
         "name": "trg_reward_transactions_validate_snapshot",
         "table": "reward_transactions",
