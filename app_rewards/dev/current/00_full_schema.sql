@@ -5,7 +5,7 @@
     "data": {
       "schema": "app_rewards",
       "version": "1.0.0",
-      "exported_at": "2026-05-13T20:26:45.254944+00:00",
+      "exported_at": "2026-05-13T20:34:30.124014+00:00",
       "module_name": "rewards_engine",
       "business_purpose": "Reward management and processing"
     }
@@ -19,6 +19,42 @@
     "object_type": "tables",
     "sort_order": 2,
     "data": [
+      {
+        "name": "allowed_reward_types",
+        "schema": "app_rewards",
+        "columns": [
+          {
+            "name": "reward_type",
+            "type": "text",
+            "default": null,
+            "nullable": false,
+            "is_identity": false
+          },
+          {
+            "name": "description",
+            "type": "text",
+            "default": null,
+            "nullable": true,
+            "is_identity": false
+          },
+          {
+            "name": "is_active",
+            "type": "boolean",
+            "default": "true",
+            "nullable": true,
+            "is_identity": false
+          }
+        ],
+        "indexes": null,
+        "raw_sql": "CREATE TABLE app_rewards.allowed_reward_types (\\n    reward_type text NOT NULL,\n    description text,\n    is_active boolean DEFAULT true,\n    CONSTRAINT allowed_reward_types_pkey PRIMARY KEY (reward_type)\\n);",
+        "primary_key": [
+          "reward_type"
+        ],
+        "foreign_keys": null,
+        "business_purpose": null,
+        "check_constraints": null,
+        "unique_constraints": null
+      },
       {
         "name": "processing_log",
         "schema": "app_rewards",
@@ -795,14 +831,6 @@
         "business_purpose": null,
         "check_constraints": [
           {
-            "name": "chk_reward_config_schema",
-            "expression": "CHECK (app_rewards.is_valid_reward_config(reward_config)) NOT VALID"
-          },
-          {
-            "name": "chk_reward_config_structure",
-            "expression": "CHECK (reward_config ? 'amount'::text OR reward_config ? 'rewards'::text) NOT VALID"
-          },
-          {
             "name": "chk_reward_config_valid",
             "expression": "CHECK (app_rewards.is_valid_reward_config(reward_config)) NOT VALID"
           }
@@ -1033,6 +1061,19 @@
             "ref_schema": "app_rewards",
             "ref_columns": [
               "id"
+            ]
+          },
+          {
+            "name": "fk_reward_type_allowed",
+            "columns": [
+              "reward_type"
+            ],
+            "on_delete": "",
+            "on_update": "",
+            "ref_table": "allowed_reward_types",
+            "ref_schema": "app_rewards",
+            "ref_columns": [
+              "reward_type"
             ]
           },
           {
@@ -1787,7 +1828,7 @@
       {
         "name": "validate_reward_config_details",
         "schema": "app_rewards",
-        "source": "CREATE OR REPLACE FUNCTION app_rewards.validate_reward_config_details()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    IF NEW.reward_config ? 'amount' AND NOT (NEW.reward_config->>'amount') ~ '^[0-9]+\\.?[0-9]*$' THEN\r\n        RAISE EXCEPTION 'Invalid amount in reward_config: %', NEW.reward_config->>'amount';\r\n    END IF;\r\n    IF NEW.reward_config ? 'rewards' AND jsonb_typeof(NEW.reward_config->'rewards') != 'array' THEN\r\n        RAISE EXCEPTION 'rewards must be an array';\r\n    END IF;\r\n    RETURN NEW;\r\nEND;\r\n$function$\n",
+        "source": "CREATE OR REPLACE FUNCTION app_rewards.validate_reward_config_details()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nDECLARE\r\n    v_item jsonb;\r\n    v_type text;\r\nBEGIN\r\n    IF NOT (NEW.reward_config ? 'amount' OR NEW.reward_config ? 'rewards') THEN\r\n        RAISE EXCEPTION 'reward_config must contain either \"amount\" or \"rewards\" key';\r\n    END IF;\r\n    \r\n    IF NEW.reward_config ? 'amount' THEN\r\n        IF NOT (NEW.reward_config->>'amount') ~ '^[0-9]+\\.?[0-9]*$' THEN\r\n            RAISE EXCEPTION 'Invalid amount in reward_config: %', NEW.reward_config->>'amount';\r\n        END IF;\r\n    END IF;\r\n    \r\n    IF NEW.reward_config ? 'rewards' THEN\r\n        IF jsonb_typeof(NEW.reward_config->'rewards') != 'array' THEN\r\n            RAISE EXCEPTION 'rewards must be an array';\r\n        END IF;\r\n        FOR i IN 0..jsonb_array_length(NEW.reward_config->'rewards') - 1 LOOP\r\n            v_item := NEW.reward_config->'rewards'->i;\r\n            v_type := v_item->>'type';\r\n            IF v_type IS NULL THEN\r\n                RAISE EXCEPTION 'Each reward in array must have a \"type\" field';\r\n            END IF;\r\n            IF NOT EXISTS (SELECT 1 FROM app_rewards.allowed_reward_types WHERE reward_type = v_type AND is_active = true) THEN\r\n                RAISE EXCEPTION 'Reward type \"%\" is not allowed', v_type;\r\n            END IF;\r\n        END LOOP;\r\n    END IF;\r\n    \r\n    RETURN NEW;\r\nEND;\r\n$function$\n",
         "returns": "trigger",
         "language": "plpgsql",
         "arguments": null
