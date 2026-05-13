@@ -5,7 +5,7 @@
     "data": {
       "schema": "app_rewards",
       "version": "1.0.0",
-      "exported_at": "2026-05-13T19:26:17.224016+00:00",
+      "exported_at": "2026-05-13T19:39:28.296267+00:00",
       "module_name": "rewards_engine",
       "business_purpose": "Reward management and processing"
     }
@@ -106,6 +106,13 @@
             "default": null,
             "nullable": false,
             "is_identity": false
+          },
+          {
+            "name": "dead_letter_reason",
+            "type": "text",
+            "default": null,
+            "nullable": true,
+            "is_identity": false
           }
         ],
         "indexes": [
@@ -125,6 +132,11 @@
             "definition": "CREATE INDEX idx_reward_events_next_retry ON app_rewards.reward_events USING btree (next_retry_at) WHERE (status = 'retrying'::text)"
           },
           {
+            "name": "idx_reward_events_pending_retrying_created",
+            "unique": false,
+            "definition": "CREATE INDEX idx_reward_events_pending_retrying_created ON app_rewards.reward_events USING btree (status, created_at, id) WHERE (status = ANY (ARRAY['pending'::text, 'retrying'::text]))"
+          },
+          {
             "name": "idx_reward_events_queue",
             "unique": false,
             "definition": "CREATE INDEX idx_reward_events_queue ON app_rewards.reward_events USING btree (status, next_retry_at, created_at) WHERE (status = ANY (ARRAY['pending'::text, 'retrying'::text]))"
@@ -140,7 +152,7 @@
             "definition": "CREATE INDEX idx_reward_events_user_status ON app_rewards.reward_events USING btree (user_id, status)"
           }
         ],
-        "raw_sql": "CREATE TABLE app_rewards.reward_events (\\n    id uuid NOT NULL DEFAULT gen_random_uuid(),\n    user_id uuid NOT NULL,\n    payload jsonb,\n    created_at timestamp with time zone DEFAULT now(),\n    metadata jsonb,\n    status text DEFAULT 'pending'::text,\n    retry_count integer DEFAULT 0,\n    last_error text,\n    completed_at timestamp with time zone,\n    next_retry_at timestamp with time zone,\n    max_retries integer DEFAULT 3,\n    event_id uuid NOT NULL,\n    CONSTRAINT reward_events_pkey PRIMARY KEY (id)\\n);",
+        "raw_sql": "CREATE TABLE app_rewards.reward_events (\\n    id uuid NOT NULL DEFAULT gen_random_uuid(),\n    user_id uuid NOT NULL,\n    payload jsonb,\n    created_at timestamp with time zone DEFAULT now(),\n    metadata jsonb,\n    status text DEFAULT 'pending'::text,\n    retry_count integer DEFAULT 0,\n    last_error text,\n    completed_at timestamp with time zone,\n    next_retry_at timestamp with time zone,\n    max_retries integer DEFAULT 3,\n    event_id uuid NOT NULL,\n    dead_letter_reason text,\n    CONSTRAINT reward_events_pkey PRIMARY KEY (id)\\n);",
         "primary_key": [
           "id"
         ],
@@ -864,6 +876,11 @@
             "name": "uq_reward_transactions_idempotency",
             "unique": true,
             "definition": "CREATE UNIQUE INDEX uq_reward_transactions_idempotency ON app_rewards.reward_transactions USING btree (idempotency_key)"
+          },
+          {
+            "name": "uq_reward_work",
+            "unique": true,
+            "definition": "CREATE UNIQUE INDEX uq_reward_work ON app_rewards.reward_transactions USING btree (user_id, event_id, rule_id, reward_type)"
           }
         ],
         "raw_sql": "CREATE TABLE app_rewards.reward_transactions (\\n    id uuid NOT NULL DEFAULT gen_random_uuid(),\n    user_id uuid NOT NULL,\n    rule_id uuid,\n    reward_type text NOT NULL,\n    amount numeric,\n    value text,\n    status text NOT NULL DEFAULT 'granted'::text,\n    idempotency_key text NOT NULL,\n    created_at timestamp with time zone DEFAULT now(),\n    metadata jsonb,\n    earned_at timestamp with time zone DEFAULT now(),\n    asset_code text,\n    source_type text,\n    source_id uuid,\n    wallet_transaction_id uuid,\n    rule_snapshot jsonb,\n    wallet_confirmed boolean DEFAULT false,\n    wallet_confirmed_at timestamp with time zone,\n    wallet_failure_reason text,\n    event_id uuid NOT NULL,\n    CONSTRAINT reward_transactions_pkey PRIMARY KEY (id)\\n);",
@@ -927,6 +944,15 @@
             "name": "uq_reward_transactions_idempotency",
             "columns": [
               "idempotency_key"
+            ]
+          },
+          {
+            "name": "uq_reward_work",
+            "columns": [
+              "user_id",
+              "rule_id",
+              "reward_type",
+              "event_id"
             ]
           }
         ]
@@ -1010,6 +1036,31 @@
           {
             "name": "retry_count",
             "type": "integer"
+          }
+        ]
+      },
+      {
+        "name": "calculate_reward",
+        "schema": "app_rewards",
+        "source": "CREATE OR REPLACE FUNCTION app_rewards.calculate_reward(p_rule_config jsonb)\n RETURNS TABLE(amount numeric, value text, asset_code text)\n LANGUAGE plpgsql\n IMMUTABLE\nAS $function$\r\nBEGIN\r\n    amount := (p_rule_config->>'amount')::numeric;\r\n    value := p_rule_config->>'value';\r\n    asset_code := p_rule_config->>'asset_code';\r\n    RETURN NEXT;\r\nEND;\r\n$function$\n",
+        "returns": "record",
+        "language": "plpgsql",
+        "arguments": [
+          {
+            "name": "p_rule_config",
+            "type": "jsonb"
+          },
+          {
+            "name": "amount",
+            "type": null
+          },
+          {
+            "name": "value",
+            "type": null
+          },
+          {
+            "name": "asset_code",
+            "type": null
           }
         ]
       },
@@ -1299,9 +1350,66 @@
         ]
       },
       {
+        "name": "grant_transaction",
+        "schema": "app_rewards",
+        "source": "CREATE OR REPLACE FUNCTION app_rewards.grant_transaction(p_user_id uuid, p_event_id uuid, p_rule_id uuid, p_reward_type text, p_idempotency_key text, p_amount numeric, p_value text, p_asset_code text, p_source_type text, p_source_id uuid, p_metadata jsonb, p_rule_snapshot jsonb)\n RETURNS uuid\n LANGUAGE plpgsql\nAS $function$\r\nDECLARE\r\n    v_tx_id uuid;\r\nBEGIN\r\n    INSERT INTO app_rewards.reward_transactions (\r\n        user_id, event_id, rule_id, reward_type, amount, value,\r\n        asset_code, source_type, source_id, idempotency_key,\r\n        metadata, rule_snapshot, status, earned_at\r\n    ) VALUES (\r\n        p_user_id, p_event_id, p_rule_id, p_reward_type, p_amount, p_value,\r\n        p_asset_code, p_source_type, p_source_id, p_idempotency_key,\r\n        p_metadata, p_rule_snapshot, 'granted', now()\r\n    )\r\n    RETURNING id INTO v_tx_id;\r\n    RETURN v_tx_id;\r\nEND;\r\n$function$\n",
+        "returns": "uuid",
+        "language": "plpgsql",
+        "arguments": [
+          {
+            "name": "p_user_id",
+            "type": "uuid"
+          },
+          {
+            "name": "p_event_id",
+            "type": "uuid"
+          },
+          {
+            "name": "p_rule_id",
+            "type": "uuid"
+          },
+          {
+            "name": "p_reward_type",
+            "type": "text"
+          },
+          {
+            "name": "p_idempotency_key",
+            "type": "text"
+          },
+          {
+            "name": "p_amount",
+            "type": "numeric"
+          },
+          {
+            "name": "p_value",
+            "type": "text"
+          },
+          {
+            "name": "p_asset_code",
+            "type": "text"
+          },
+          {
+            "name": "p_source_type",
+            "type": "text"
+          },
+          {
+            "name": "p_source_id",
+            "type": "uuid"
+          },
+          {
+            "name": "p_metadata",
+            "type": "jsonb"
+          },
+          {
+            "name": "p_rule_snapshot",
+            "type": "jsonb"
+          }
+        ]
+      },
+      {
         "name": "process_reward_event",
         "schema": "app_rewards",
-        "source": "CREATE OR REPLACE FUNCTION app_rewards.process_reward_event(p_limit integer DEFAULT 10)\n RETURNS TABLE(processed_event_id uuid, transaction_id uuid, action_taken text)\n LANGUAGE plpgsql\nAS $function$\r\nDECLARE\r\n    v_event app_rewards.reward_events%ROWTYPE;\r\n    v_rule RECORD;\r\n    v_transaction_id uuid;\r\n    v_reward_config jsonb;\r\n    v_amount numeric;\r\n    v_value text;\r\n    v_reward_type text := 'point';\r\n    v_now timestamptz := now();\r\n    v_action text;\r\nBEGIN\r\n    FOR v_event IN\r\n        SELECT * FROM app_rewards.reward_events\r\n        WHERE status IN ('pending', 'retrying')\r\n          AND (next_retry_at IS NULL OR next_retry_at <= v_now)\r\n        ORDER BY created_at\r\n        LIMIT p_limit\r\n        FOR UPDATE SKIP LOCKED\r\n    LOOP\r\n        -- Update status to processing (without incrementing retry_count here)\r\n        UPDATE app_rewards.reward_events\r\n        SET status = 'processing', retry_count = COALESCE(retry_count, 0)\r\n        WHERE id = v_event.id;\r\n\r\n        -- Get active rule\r\n        SELECT rv.id, rv.version, rv.reward_config, rv.starts_at, rv.expires_at\r\n        INTO v_rule\r\n        FROM app_rewards.reward_rule_versions rv\r\n        WHERE rv.event_id = v_event.event_id\r\n          AND rv.is_active = true\r\n          AND rv.is_deleted = false\r\n          AND (rv.starts_at IS NULL OR rv.starts_at <= v_now)\r\n          AND (rv.expires_at IS NULL OR rv.expires_at > v_now)\r\n        ORDER BY rv.version DESC\r\n        LIMIT 1;\r\n\r\n        IF NOT FOUND THEN\r\n            -- No active rule -> mark as failed\r\n            UPDATE app_rewards.reward_events\r\n            SET status = 'failed', last_error = 'No active rule found', completed_at = v_now\r\n            WHERE id = v_event.id;\r\n            v_action := 'no_rule';\r\n            processed_event_id := v_event.id;\r\n            transaction_id := NULL;\r\n            RETURN NEXT;\r\n            CONTINUE;\r\n        END IF;\r\n\r\n        -- Calculate reward from config (simple example)\r\n        v_reward_config := v_rule.reward_config;\r\n        v_amount := (v_reward_config->>'amount')::numeric;\r\n        v_value := v_reward_config->>'value';\r\n\r\n        -- Grant reward with idempotency handling\r\n        BEGIN\r\n            INSERT INTO app_rewards.reward_transactions (\r\n                user_id, event_id, rule_id, reward_type, amount, value,\r\n                asset_code, source_type, source_id, idempotency_key,\r\n                metadata, rule_snapshot, status, earned_at\r\n            ) VALUES (\r\n                v_event.user_id, v_event.event_id, v_rule.id, v_reward_type, v_amount, v_value,\r\n                v_reward_config->>'asset_code', 'reward_event', v_event.id,\r\n                v_event.id::text || ':' || v_rule.id::text,\r\n                v_event.metadata,\r\n                jsonb_build_object('rule_id', v_rule.id, 'version', v_rule.version, 'reward_config', v_reward_config),\r\n                'granted', v_now\r\n            )\r\n            RETURNING id INTO v_transaction_id;\r\n\r\n            UPDATE app_rewards.reward_events\r\n            SET status = 'completed', completed_at = v_now\r\n            WHERE id = v_event.id;\r\n            v_action := 'granted';\r\n        EXCEPTION WHEN unique_violation THEN\r\n            -- Duplicate idempotency_key -> already processed\r\n            SELECT id INTO v_transaction_id\r\n            FROM app_rewards.reward_transactions\r\n            WHERE idempotency_key = v_event.id::text || ':' || v_rule.id::text;\r\n            UPDATE app_rewards.reward_events\r\n            SET status = 'completed', completed_at = v_now\r\n            WHERE id = v_event.id;\r\n            v_action := 'duplicate';\r\n        WHEN OTHERS THEN\r\n            -- Failure: update retry info\r\n            UPDATE app_rewards.reward_events\r\n            SET status = 'retrying',\r\n                retry_count = retry_count + 1,\r\n                last_error = SQLERRM,\r\n                next_retry_at = v_now + (2 * power(2, retry_count)) * interval '1 second'\r\n            WHERE id = v_event.id;\r\n            v_action := 'failed_retry';\r\n            v_transaction_id := NULL;\r\n        END;\r\n\r\n        processed_event_id := v_event.id;\r\n        transaction_id := v_transaction_id;\r\n        RETURN NEXT;\r\n    END LOOP;\r\nEND;\r\n$function$\n",
+        "source": "CREATE OR REPLACE FUNCTION app_rewards.process_reward_event(p_limit integer DEFAULT 10)\n RETURNS TABLE(processed_event_id uuid, transaction_id uuid, action_taken text)\n LANGUAGE plpgsql\nAS $function$\r\nDECLARE\r\n    v_event app_rewards.reward_events%ROWTYPE;\r\n    v_rule RECORD;\r\n    v_transaction_id uuid;\r\n    v_calc RECORD;\r\n    v_now timestamptz := now();\r\n    v_action text;\r\n    v_new_retry_count integer;\r\nBEGIN\r\n    FOR v_event IN\r\n        SELECT *\r\n        FROM app_rewards.reward_events\r\n        WHERE status IN ('pending', 'retrying')\r\n          AND (next_retry_at IS NULL OR next_retry_at <= v_now)\r\n          AND (processing_started_at IS NULL OR processing_started_at < v_now - interval '5 minutes')\r\n        ORDER BY created_at, id   -- ضمان عدم تجويع أي حدث\r\n        LIMIT p_limit\r\n        FOR UPDATE SKIP LOCKED\r\n    LOOP\r\n        -- تحديث حالة إلى processing\r\n        UPDATE app_rewards.reward_events\r\n        SET status = 'processing', processing_started_at = v_now,\r\n            retry_count = COALESCE(retry_count, 0)\r\n        WHERE id = v_event.id;\r\n\r\n        -- 1. resolve rule\r\n        SELECT * INTO v_rule\r\n        FROM app_rewards.resolve_rule(v_event.event_id);\r\n\r\n        IF NOT FOUND THEN\r\n            UPDATE app_rewards.reward_events\r\n            SET status = 'failed', last_error = 'No active rule found', completed_at = v_now\r\n            WHERE id = v_event.id;\r\n            v_action := 'no_rule';\r\n            processed_event_id := v_event.id;\r\n            transaction_id := NULL;\r\n            RETURN NEXT;\r\n            CONTINUE;\r\n        END IF;\r\n\r\n        -- 2. calculate reward\r\n        SELECT * INTO v_calc\r\n        FROM app_rewards.calculate_reward(v_rule.rule_config);\r\n\r\n        -- 3. grant transaction (باستخدام idempotency_key فريد)\r\n        BEGIN\r\n            v_transaction_id := app_rewards.grant_transaction(\r\n                p_user_id => v_event.user_id,\r\n                p_event_id => v_event.event_id,\r\n                p_rule_id => v_rule.rule_id,\r\n                p_reward_type => 'point',   -- يمكن جعله ديناميكيًا\r\n                p_idempotency_key => v_event.id::text || ':' || v_rule.rule_id::text,\r\n                p_amount => v_calc.amount,\r\n                p_value => v_calc.value,\r\n                p_asset_code => v_calc.asset_code,\r\n                p_source_type => 'reward_event',\r\n                p_source_id => v_event.id,\r\n                p_metadata => v_event.metadata,\r\n                p_rule_snapshot => v_rule.rule_snapshot\r\n            );\r\n            -- نجاح\r\n            UPDATE app_rewards.reward_events\r\n            SET status = 'completed', completed_at = v_now\r\n            WHERE id = v_event.id;\r\n            v_action := 'granted';\r\n        EXCEPTION\r\n            WHEN unique_violation THEN\r\n                -- قد يكون تكرار idempotency أو تكرار منطقي (لقبض على كليهما)\r\n                SELECT id INTO v_transaction_id\r\n                FROM app_rewards.reward_transactions\r\n                WHERE idempotency_key = v_event.id::text || ':' || v_rule.rule_id::text;\r\n                UPDATE app_rewards.reward_events\r\n                SET status = 'completed', completed_at = v_now\r\n                WHERE id = v_event.id;\r\n                v_action := 'duplicate';\r\n            WHEN OTHERS THEN\r\n                -- فشل: حساب retry أو dead_letter\r\n                v_new_retry_count := COALESCE(v_event.retry_count, 0) + 1;\r\n                IF v_new_retry_count >= v_event.max_retries THEN\r\n                    -- Dead letter\r\n                    UPDATE app_rewards.reward_events\r\n                    SET status = 'dead_letter',\r\n                        retry_count = v_new_retry_count,\r\n                        last_error = SQLERRM,\r\n                        dead_letter_reason = SQLERRM,\r\n                        completed_at = v_now\r\n                    WHERE id = v_event.id;\r\n                    v_action := 'dead_letter';\r\n                    v_transaction_id := NULL;\r\n                ELSE\r\n                    UPDATE app_rewards.reward_events\r\n                    SET status = 'retrying',\r\n                        retry_count = v_new_retry_count,\r\n                        last_error = SQLERRM,\r\n                        next_retry_at = app_rewards.calc_next_retry_at(2, v_new_retry_count)\r\n                    WHERE id = v_event.id;\r\n                    v_action := 'failed_retry';\r\n                    v_transaction_id := NULL;\r\n                END IF;\r\n        END;\r\n\r\n        processed_event_id := v_event.id;\r\n        transaction_id := v_transaction_id;\r\n        RETURN NEXT;\r\n    END LOOP;\r\nEND;\r\n$function$\n",
         "returns": "record",
         "language": "plpgsql",
         "arguments": [
@@ -1319,6 +1427,43 @@
           },
           {
             "name": "action_taken",
+            "type": null
+          }
+        ]
+      },
+      {
+        "name": "resolve_rule",
+        "schema": "app_rewards",
+        "source": "CREATE OR REPLACE FUNCTION app_rewards.resolve_rule(p_event_id uuid)\n RETURNS TABLE(rule_id uuid, rule_version integer, rule_config jsonb, rule_snapshot jsonb, starts_at timestamp with time zone, expires_at timestamp with time zone)\n LANGUAGE plpgsql\n STABLE\nAS $function$\r\nBEGIN\r\n    RETURN QUERY\r\n    SELECT\r\n        rv.id,\r\n        rv.version,\r\n        rv.reward_config,\r\n        jsonb_build_object(\r\n            'id', rv.id,\r\n            'event_id', rv.event_id,\r\n            'version', rv.version,\r\n            'reward_config', rv.reward_config,\r\n            'starts_at', rv.starts_at,\r\n            'expires_at', rv.expires_at\r\n        ) AS rule_snapshot,\r\n        rv.starts_at,\r\n        rv.expires_at\r\n    FROM app_rewards.reward_rule_versions rv\r\n    WHERE rv.event_id = p_event_id\r\n      AND rv.is_active = true\r\n      AND rv.is_deleted = false\r\n      AND (rv.starts_at IS NULL OR rv.starts_at <= now())\r\n      AND (rv.expires_at IS NULL OR rv.expires_at > now())\r\n    ORDER BY rv.version DESC\r\n    LIMIT 1;\r\nEND;\r\n$function$\n",
+        "returns": "record",
+        "language": "plpgsql",
+        "arguments": [
+          {
+            "name": "p_event_id",
+            "type": "uuid"
+          },
+          {
+            "name": "rule_id",
+            "type": null
+          },
+          {
+            "name": "rule_version",
+            "type": null
+          },
+          {
+            "name": "rule_config",
+            "type": null
+          },
+          {
+            "name": "rule_snapshot",
+            "type": null
+          },
+          {
+            "name": "starts_at",
+            "type": null
+          },
+          {
+            "name": "expires_at",
             "type": null
           }
         ]
@@ -1485,6 +1630,14 @@
         ]
       },
       {
+        "name": "validate_and_snapshot_rule",
+        "schema": "app_rewards",
+        "source": "CREATE OR REPLACE FUNCTION app_rewards.validate_and_snapshot_rule()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nDECLARE\r\n    v_rule RECORD;\r\nBEGIN\r\n    IF NEW.rule_id IS NOT NULL AND NEW.rule_snapshot IS NULL THEN\r\n        SELECT * INTO v_rule FROM app_rewards.resolve_rule(NEW.event_id);\r\n        IF NOT FOUND THEN\r\n            RAISE EXCEPTION 'Rule % is not active or not valid at this time', NEW.rule_id;\r\n        END IF;\r\n        NEW.rule_snapshot := v_rule.rule_snapshot;\r\n    END IF;\r\n    RETURN NEW;\r\nEND;\r\n$function$\n",
+        "returns": "trigger",
+        "language": "plpgsql",
+        "arguments": null
+      },
+      {
         "name": "write_audit_log",
         "schema": "app_rewards",
         "source": "CREATE OR REPLACE FUNCTION app_rewards.write_audit_log(p_rule_id uuid, p_action_type text, p_old_version integer, p_new_version integer, p_changed_by uuid, p_old_reward_config jsonb DEFAULT NULL::jsonb, p_new_reward_config jsonb DEFAULT NULL::jsonb, p_metadata jsonb DEFAULT '{}'::jsonb, p_event_id uuid DEFAULT NULL::uuid, p_transaction_id uuid DEFAULT NULL::uuid, p_request_id uuid DEFAULT NULL::uuid, p_trace_id uuid DEFAULT NULL::uuid)\n RETURNS void\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    IF p_action_type NOT IN ('create', 'update', 'activate', 'deactivate') THEN\r\n        RAISE EXCEPTION 'Invalid action_type: %', p_action_type;\r\n    END IF;\r\n\r\n    INSERT INTO app_rewards.reward_rule_audit_log (\r\n        rule_id, action_type, old_version, new_version, changed_by,\r\n        old_reward_config, new_reward_config, metadata,\r\n        event_id, transaction_id, request_id, trace_id\r\n    ) VALUES (\r\n        p_rule_id, p_action_type, p_old_version, p_new_version, p_changed_by,\r\n        p_old_reward_config, p_new_reward_config, p_metadata,\r\n        p_event_id, p_transaction_id, p_request_id, p_trace_id\r\n    );\r\nEND;\r\n$function$\n",
@@ -1558,6 +1711,12 @@
         "table": "reward_transactions",
         "schema": "app_rewards",
         "definition": "CREATE TRIGGER trg_reward_transactions_rule_check BEFORE INSERT ON app_rewards.reward_transactions FOR EACH ROW EXECUTE FUNCTION app_rewards.check_rule_active_and_snapshot()"
+      },
+      {
+        "name": "trg_reward_transactions_validate_snapshot",
+        "table": "reward_transactions",
+        "schema": "app_rewards",
+        "definition": "CREATE TRIGGER trg_reward_transactions_validate_snapshot BEFORE INSERT ON app_rewards.reward_transactions FOR EACH ROW EXECUTE FUNCTION app_rewards.validate_and_snapshot_rule()"
       }
     ]
   },
