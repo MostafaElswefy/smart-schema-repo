@@ -5,7 +5,7 @@
     "data": {
       "schema": "app_rewards",
       "version": "1.0.0",
-      "exported_at": "2026-05-13T20:48:04.110517+00:00",
+      "exported_at": "2026-05-14T07:25:28.220274+00:00",
       "module_name": "rewards_engine",
       "business_purpose": "Reward management and processing"
     }
@@ -1901,3 +1901,4 @@
     ]
   }
 ]
+
