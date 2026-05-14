@@ -5,7 +5,7 @@
     "data": {
       "schema": "app_rewards",
       "version": "1.0.0",
-      "exported_at": "2026-05-14T07:25:28.220274+00:00",
+      "exported_at": "2026-05-14T10:00:47.030937+00:00",
       "module_name": "rewards_engine",
       "business_purpose": "Reward management and processing"
     }
@@ -43,14 +43,97 @@
             "default": "true",
             "nullable": true,
             "is_identity": false
+          },
+          {
+            "name": "icon_key",
+            "type": "text",
+            "default": null,
+            "nullable": true,
+            "is_identity": false
+          },
+          {
+            "name": "icon_type",
+            "type": "text",
+            "default": null,
+            "nullable": true,
+            "is_identity": false
+          },
+          {
+            "name": "icon_color",
+            "type": "text",
+            "default": null,
+            "nullable": true,
+            "is_identity": false
+          },
+          {
+            "name": "display_name",
+            "type": "text",
+            "default": null,
+            "nullable": true,
+            "is_identity": false
+          },
+          {
+            "name": "created_at",
+            "type": "timestamp with time zone",
+            "default": "now()",
+            "nullable": true,
+            "is_identity": false
+          },
+          {
+            "name": "created_by",
+            "type": "uuid",
+            "default": null,
+            "nullable": true,
+            "is_identity": false
+          },
+          {
+            "name": "updated_at",
+            "type": "timestamp with time zone",
+            "default": "now()",
+            "nullable": true,
+            "is_identity": false
+          },
+          {
+            "name": "updated_by",
+            "type": "uuid",
+            "default": null,
+            "nullable": true,
+            "is_identity": false
           }
         ],
         "indexes": null,
-        "raw_sql": "CREATE TABLE app_rewards.allowed_reward_types (\\n    reward_type text NOT NULL,\n    description text,\n    is_active boolean DEFAULT true,\n    CONSTRAINT allowed_reward_types_pkey PRIMARY KEY (reward_type)\\n);",
+        "raw_sql": "CREATE TABLE app_rewards.allowed_reward_types (\\n    reward_type text NOT NULL,\n    description text,\n    is_active boolean DEFAULT true,\n    icon_key text,\n    icon_type text,\n    icon_color text,\n    display_name text,\n    created_at timestamp with time zone DEFAULT now(),\n    created_by uuid,\n    updated_at timestamp with time zone DEFAULT now(),\n    updated_by uuid,\n    CONSTRAINT allowed_reward_types_pkey PRIMARY KEY (reward_type)\\n);",
         "primary_key": [
           "reward_type"
         ],
-        "foreign_keys": null,
+        "foreign_keys": [
+          {
+            "name": "fk_allowed_reward_types_created_by",
+            "columns": [
+              "created_by"
+            ],
+            "on_delete": "",
+            "on_update": "",
+            "ref_table": "user_identity_root",
+            "ref_schema": "public",
+            "ref_columns": [
+              "internal_user_id"
+            ]
+          },
+          {
+            "name": "fk_allowed_reward_types_updated_by",
+            "columns": [
+              "updated_by"
+            ],
+            "on_delete": "",
+            "on_update": "",
+            "ref_table": "user_identity_root",
+            "ref_schema": "public",
+            "ref_columns": [
+              "internal_user_id"
+            ]
+          }
+        ],
         "business_purpose": null,
         "check_constraints": null,
         "unique_constraints": null
@@ -1732,6 +1815,14 @@
         ]
       },
       {
+        "name": "update_updated_at_column",
+        "schema": "app_rewards",
+        "source": "CREATE OR REPLACE FUNCTION app_rewards.update_updated_at_column()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    NEW.updated_at = now();\r\n    RETURN NEW;\r\nEND;\r\n$function$\n",
+        "returns": "trigger",
+        "language": "plpgsql",
+        "arguments": null
+      },
+      {
         "name": "validate_and_snapshot_rule",
         "schema": "app_rewards",
         "source": "CREATE OR REPLACE FUNCTION app_rewards.validate_and_snapshot_rule()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    IF NEW.rule_id IS NOT NULL AND NEW.rule_snapshot IS NULL THEN\r\n        SELECT jsonb_build_object(\r\n            'id', rv.id,\r\n            'event_id', rv.event_id,\r\n            'version', rv.version,\r\n            'reward_config', rv.reward_config,\r\n            'starts_at', rv.starts_at,\r\n            'expires_at', rv.expires_at\r\n        ) INTO NEW.rule_snapshot\r\n        FROM app_rewards.reward_rule_versions rv\r\n        WHERE rv.id = NEW.rule_id\r\n          AND rv.is_active = true\r\n          AND (rv.starts_at IS NULL OR rv.starts_at <= now())\r\n          AND (rv.expires_at IS NULL OR rv.expires_at > now())\r\n          AND rv.is_deleted = false;\r\n    END IF;\r\n    RETURN NEW;\r\nEND;\r\n$function$\n",
@@ -1810,6 +1901,12 @@
     "object_type": "triggers",
     "sort_order": 5,
     "data": [
+      {
+        "name": "trg_allowed_reward_types_updated_at",
+        "table": "allowed_reward_types",
+        "schema": "app_rewards",
+        "definition": "CREATE TRIGGER trg_allowed_reward_types_updated_at BEFORE UPDATE ON app_rewards.allowed_reward_types FOR EACH ROW EXECUTE FUNCTION app_rewards.update_updated_at_column()"
+      },
       {
         "name": "trg_validate_reward_config_details",
         "table": "reward_rule_versions",
@@ -1901,4 +1998,3 @@
     ]
   }
 ]
-
