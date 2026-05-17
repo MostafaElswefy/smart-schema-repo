@@ -5,7 +5,7 @@
     "data": {
       "schema": "app_push_notifications",
       "version": "1.0.0",
-      "exported_at": "2026-05-17T20:58:33.300057+00:00",
+      "exported_at": "2026-05-17T21:09:10.968613+00:00",
       "module_name": "rewards_engine",
       "business_purpose": "Reward management and processing"
     }
@@ -1221,6 +1221,69 @@
         "unique_constraints": null
       },
       {
+        "name": "rate_limit_events",
+        "schema": "app_push_notifications",
+        "columns": [
+          {
+            "name": "id",
+            "type": "uuid",
+            "default": "gen_random_uuid()",
+            "nullable": false,
+            "is_identity": false
+          },
+          {
+            "name": "app_id",
+            "type": "text",
+            "default": null,
+            "nullable": false,
+            "is_identity": false
+          },
+          {
+            "name": "target_type",
+            "type": "USER-DEFINED",
+            "default": null,
+            "nullable": false,
+            "is_identity": false
+          },
+          {
+            "name": "created_at",
+            "type": "timestamp with time zone",
+            "default": "now()",
+            "nullable": false,
+            "is_identity": false
+          }
+        ],
+        "indexes": [
+          {
+            "name": "idx_rate_limit_events_app_created",
+            "unique": false,
+            "definition": "CREATE INDEX idx_rate_limit_events_app_created ON app_push_notifications.rate_limit_events USING btree (app_id, target_type, created_at)"
+          }
+        ],
+        "raw_sql": "CREATE TABLE app_push_notifications.rate_limit_events (\\n    id uuid NOT NULL DEFAULT gen_random_uuid(),\n    app_id text NOT NULL,\n    target_type USER-DEFINED NOT NULL,\n    created_at timestamp with time zone NOT NULL DEFAULT now(),\n    CONSTRAINT rate_limit_events_pkey PRIMARY KEY (id)\\n);",
+        "primary_key": [
+          "id"
+        ],
+        "foreign_keys": [
+          {
+            "name": "rate_limit_events_app_id_fkey",
+            "columns": [
+              "app_id"
+            ],
+            "on_delete": "CASCADE",
+            "on_update": "",
+            "ref_table": "app_registry",
+            "ref_schema": "public",
+            "ref_columns": [
+              "app_id"
+            ]
+          }
+        ],
+        "business_purpose": null,
+        "check_constraints": null,
+        "unique_constraints": null
+      },
+      {
         "name": "retry_policies",
         "schema": "app_push_notifications",
         "columns": [
@@ -1612,9 +1675,76 @@
         ]
       },
       {
+        "name": "check_rate_limit",
+        "schema": "app_push_notifications",
+        "source": "CREATE OR REPLACE FUNCTION app_push_notifications.check_rate_limit(p_app_id text, p_target_type text, p_limit_per_minute integer DEFAULT 10, p_burst_limit integer DEFAULT 20)\n RETURNS boolean\n LANGUAGE plpgsql\nAS $function$\r\nDECLARE\r\n    v_count INT;\r\n    v_window_start TIMESTAMPTZ := now() - interval '1 minute';\r\n    v_recent_count INT;\r\nBEGIN\r\n    -- حساب عدد الطلبات في الدقيقة الأخيرة\r\n    SELECT COUNT(*) INTO v_count\r\n    FROM app_push_notifications.rate_limit_events\r\n    WHERE app_id = p_app_id\r\n      AND target_type = p_target_type::app_push_notifications.push_target_type\r\n      AND created_at > v_window_start;\r\n\r\n    -- السماح إذا كان العدد أقل من الحد\r\n    IF v_count < p_limit_per_minute THEN\r\n        -- تسجيل الحدث للاستخدام المستقبلي\r\n        INSERT INTO app_push_notifications.rate_limit_events (app_id, target_type) VALUES (p_app_id, p_target_type::app_push_notifications.push_target_type);\r\n        RETURN TRUE;\r\n    ELSE\r\n        -- التحقق من الاندفاع (باستخدام نافذة أقصر مثلاً 10 ثوانٍ)\r\n        SELECT COUNT(*) INTO v_recent_count\r\n        FROM app_push_notifications.rate_limit_events\r\n        WHERE app_id = p_app_id\r\n          AND target_type = p_target_type::app_push_notifications.push_target_type\r\n          AND created_at > now() - interval '10 seconds';\r\n        IF v_recent_count < p_burst_limit THEN\r\n            INSERT INTO app_push_notifications.rate_limit_events (app_id, target_type) VALUES (p_app_id, p_target_type::app_push_notifications.push_target_type);\r\n            RETURN TRUE;\r\n        ELSE\r\n            RETURN FALSE;\r\n        END IF;\r\n    END IF;\r\nEND;\r\n$function$\n",
+        "returns": "boolean",
+        "language": "plpgsql",
+        "arguments": [
+          {
+            "name": "p_app_id",
+            "type": "text"
+          },
+          {
+            "name": "p_target_type",
+            "type": "text"
+          },
+          {
+            "name": "p_limit_per_minute",
+            "type": "integer"
+          },
+          {
+            "name": "p_burst_limit",
+            "type": "integer"
+          }
+        ]
+      },
+      {
+        "name": "cleanup_rate_limit_events",
+        "schema": "app_push_notifications",
+        "source": "CREATE OR REPLACE FUNCTION app_push_notifications.cleanup_rate_limit_events()\n RETURNS void\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    DELETE FROM app_push_notifications.rate_limit_events WHERE created_at < now() - interval '1 hour';\r\nEND;\r\n$function$\n",
+        "returns": "void",
+        "language": "plpgsql",
+        "arguments": null
+      },
+      {
+        "name": "evaluate_condition",
+        "schema": "app_push_notifications",
+        "source": "CREATE OR REPLACE FUNCTION app_push_notifications.evaluate_condition(p_user_id uuid, p_cond jsonb)\n RETURNS boolean\n LANGUAGE plpgsql\n STABLE\nAS $function$\r\nDECLARE\r\n    v_key TEXT;\r\n    v_value TEXT;\r\n    v_platform TEXT;\r\n    v_country TEXT;\r\n    v_min_score INT;\r\n    v_user_score INT;\r\nBEGIN\r\n    -- كل كائن شرط له مفتاح واحد (مثل \"platform\", \"country\", \"min_score\")\r\n    FOR v_key IN SELECT jsonb_object_keys(p_cond) LOOP\r\n        v_value := p_cond->>v_key;\r\n        IF v_key = 'platform' THEN\r\n            RETURN EXISTS (SELECT 1 FROM app_push_notifications.device_tokens dt\r\n                          WHERE dt.internal_user_id = p_user_id\r\n                            AND dt.token_status = 'active'\r\n                            AND dt.platform::text = v_value);\r\n        ELSIF v_key = 'country' THEN\r\n            RETURN EXISTS (SELECT 1 FROM app_users.user_profile up\r\n                          WHERE up.internal_user_id = p_user_id\r\n                            AND up.country = v_value);\r\n        ELSIF v_key = 'min_score' THEN\r\n            v_min_score := v_value::INT;\r\n            SELECT COALESCE(up.score, 0) INTO v_user_score\r\n            FROM app_users.user_profile up\r\n            WHERE up.internal_user_id = p_user_id;\r\n            RETURN v_user_score >= v_min_score;\r\n        ELSE\r\n            -- شرط غير معروف → false\r\n            RETURN FALSE;\r\n        END IF;\r\n    END LOOP;\r\n    RETURN FALSE;\r\nEND;\r\n$function$\n",
+        "returns": "boolean",
+        "language": "plpgsql",
+        "arguments": [
+          {
+            "name": "p_user_id",
+            "type": "uuid"
+          },
+          {
+            "name": "p_cond",
+            "type": "jsonb"
+          }
+        ]
+      },
+      {
+        "name": "evaluate_rule",
+        "schema": "app_push_notifications",
+        "source": "CREATE OR REPLACE FUNCTION app_push_notifications.evaluate_rule(p_user_id uuid, p_rule jsonb)\n RETURNS boolean\n LANGUAGE plpgsql\n STABLE\nAS $function$\r\nDECLARE\r\n    v_type TEXT;\r\n    v_result BOOLEAN := TRUE;\r\n    v_item JSONB;\r\nBEGIN\r\n    IF p_rule IS NULL THEN\r\n        RETURN TRUE;\r\n    END IF;\r\n    -- إذا كانت القاعدة كائناً بسيطاً (بدون and/or/not)\r\n    IF NOT (p_rule ? 'and' OR p_rule ? 'or' OR p_rule ? 'not') THEN\r\n        RETURN app_push_notifications.evaluate_condition(p_user_id, p_rule);\r\n    END IF;\r\n\r\n    IF p_rule ? 'and' THEN\r\n        FOR v_item IN SELECT jsonb_array_elements(p_rule->'and') LOOP\r\n            IF NOT app_push_notifications.evaluate_rule(p_user_id, v_item) THEN\r\n                RETURN FALSE;\r\n            END IF;\r\n        END LOOP;\r\n        RETURN TRUE;\r\n    ELSIF p_rule ? 'or' THEN\r\n        FOR v_item IN SELECT jsonb_array_elements(p_rule->'or') LOOP\r\n            IF app_push_notifications.evaluate_rule(p_user_id, v_item) THEN\r\n                RETURN TRUE;\r\n            END IF;\r\n        END LOOP;\r\n        RETURN FALSE;\r\n    ELSIF p_rule ? 'not' THEN\r\n        RETURN NOT app_push_notifications.evaluate_rule(p_user_id, p_rule->'not');\r\n    ELSE\r\n        RETURN FALSE;\r\n    END IF;\r\nEND;\r\n$function$\n",
+        "returns": "boolean",
+        "language": "plpgsql",
+        "arguments": [
+          {
+            "name": "p_user_id",
+            "type": "uuid"
+          },
+          {
+            "name": "p_rule",
+            "type": "jsonb"
+          }
+        ]
+      },
+      {
         "name": "evaluate_segment_filter",
         "schema": "app_push_notifications",
-        "source": "CREATE OR REPLACE FUNCTION app_push_notifications.evaluate_segment_filter(p_user_id uuid, p_filter jsonb)\n RETURNS boolean\n LANGUAGE plpgsql\n STABLE\nAS $function$\r\nDECLARE\r\n    v_platform TEXT;\r\n    v_country TEXT;\r\n    v_min_score INT;\r\n    v_user_score INT;\r\n    v_key TEXT;\r\n    v_value JSONB;\r\nBEGIN\r\n    -- إذا كان `p_filter` يحتوي على `$or` أو `$and` معقد، يمكن معالجته لاحقاً\r\n    -- حاليًا نكتفي بالشروط البسيطة\r\n\r\n    -- Platform check\r\n    IF p_filter ? 'platform' THEN\r\n        v_platform := p_filter->>'platform';\r\n        IF NOT EXISTS (SELECT 1 FROM app_push_notifications.device_tokens dt \r\n                       WHERE dt.internal_user_id = p_user_id \r\n                         AND dt.token_status = 'active' \r\n                         AND dt.platform::text = v_platform) THEN\r\n            RETURN FALSE;\r\n        END IF;\r\n    END IF;\r\n    \r\n    -- Country check\r\n    IF p_filter ? 'country' THEN\r\n        v_country := p_filter->>'country';\r\n        IF NOT EXISTS (SELECT 1 FROM app_users.user_profile up \r\n                       WHERE up.internal_user_id = p_user_id \r\n                         AND up.country = v_country) THEN\r\n            RETURN FALSE;\r\n        END IF;\r\n    END IF;\r\n    \r\n    -- Score check (إذا كان العمود موجوداً)\r\n    IF p_filter ? 'min_score' THEN\r\n        v_min_score := (p_filter->>'min_score')::INT;\r\n        -- تأكد من وجود عمود score في user_profile\r\n        SELECT COALESCE(up.score, 0) INTO v_user_score \r\n        FROM app_users.user_profile up \r\n        WHERE up.internal_user_id = p_user_id;\r\n        IF v_user_score < v_min_score THEN\r\n            RETURN FALSE;\r\n        END IF;\r\n    END IF;\r\n\r\n    -- يمكن إضافة شروط أخرى هنا (مثل `last_active_days`) مستقبلاً\r\n    \r\n    RETURN TRUE;\r\nEND;\r\n$function$\n",
+        "source": "CREATE OR REPLACE FUNCTION app_push_notifications.evaluate_segment_filter(p_user_id uuid, p_filter jsonb)\n RETURNS boolean\n LANGUAGE plpgsql\n STABLE\nAS $function$\r\nBEGIN\r\n    RETURN app_push_notifications.evaluate_rule(p_user_id, p_filter);\r\nEND;\r\n$function$\n",
         "returns": "boolean",
         "language": "plpgsql",
         "arguments": [
@@ -1625,6 +1755,19 @@
           {
             "name": "p_filter",
             "type": "jsonb"
+          }
+        ]
+      },
+      {
+        "name": "fetch_next_events",
+        "schema": "app_push_notifications",
+        "source": "CREATE OR REPLACE FUNCTION app_push_notifications.fetch_next_events(p_limit integer DEFAULT 10)\n RETURNS SETOF app_push_notifications.push_queue\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    RETURN QUERY\r\n    SELECT *\r\n    FROM app_push_notifications.push_queue\r\n    WHERE status = 'pending'\r\n      AND (scheduled_at IS NULL OR scheduled_at <= now())\r\n      AND (processing_started_at IS NULL OR processing_started_at < now() - interval '5 minutes')\r\n    ORDER BY scheduled_at NULLS FIRST, created_at\r\n    LIMIT p_limit\r\n    FOR UPDATE SKIP LOCKED;\r\nEND;\r\n$function$\n",
+        "returns": "app_push_notifications.push_queue",
+        "language": "plpgsql",
+        "arguments": [
+          {
+            "name": "p_limit",
+            "type": "integer"
           }
         ]
       },
