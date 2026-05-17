@@ -5,7 +5,7 @@
     "data": {
       "schema": "app_push_notifications",
       "version": "1.0.0",
-      "exported_at": "2026-05-17T20:49:07.430459+00:00",
+      "exported_at": "2026-05-17T20:58:33.300057+00:00",
       "module_name": "rewards_engine",
       "business_purpose": "Reward management and processing"
     }
@@ -163,6 +163,20 @@
             "default": null,
             "nullable": true,
             "is_identity": false
+          },
+          {
+            "name": "failure_category",
+            "type": "text",
+            "default": null,
+            "nullable": true,
+            "is_identity": false
+          },
+          {
+            "name": "replayable",
+            "type": "boolean",
+            "default": "false",
+            "nullable": true,
+            "is_identity": false
           }
         ],
         "indexes": [
@@ -177,12 +191,17 @@
             "definition": "CREATE INDEX idx_dlq_queue ON app_push_notifications.dead_letter_queue USING btree (queue_id)"
           },
           {
+            "name": "idx_dlq_replayable",
+            "unique": false,
+            "definition": "CREATE INDEX idx_dlq_replayable ON app_push_notifications.dead_letter_queue USING btree (replayable, created_at)"
+          },
+          {
             "name": "idx_dlq_user",
             "unique": false,
             "definition": "CREATE INDEX idx_dlq_user ON app_push_notifications.dead_letter_queue USING btree (internal_user_id)"
           }
         ],
-        "raw_sql": "CREATE TABLE app_push_notifications.dead_letter_queue (\\n    id uuid NOT NULL DEFAULT gen_random_uuid(),\n    queue_id uuid NOT NULL,\n    event_key text NOT NULL,\n    internal_user_id uuid,\n    app_id text,\n    payload jsonb NOT NULL,\n    target_type USER-DEFINED NOT NULL,\n    target_filters jsonb,\n    final_status USER-DEFINED NOT NULL,\n    error_message text,\n    error_code text,\n    retry_count integer NOT NULL,\n    created_at timestamp with time zone NOT NULL DEFAULT now(),\n    archived_at timestamp with time zone,\n    CONSTRAINT dead_letter_queue_pkey PRIMARY KEY (id)\\n);",
+        "raw_sql": "CREATE TABLE app_push_notifications.dead_letter_queue (\\n    id uuid NOT NULL DEFAULT gen_random_uuid(),\n    queue_id uuid NOT NULL,\n    event_key text NOT NULL,\n    internal_user_id uuid,\n    app_id text,\n    payload jsonb NOT NULL,\n    target_type USER-DEFINED NOT NULL,\n    target_filters jsonb,\n    final_status USER-DEFINED NOT NULL,\n    error_message text,\n    error_code text,\n    retry_count integer NOT NULL,\n    created_at timestamp with time zone NOT NULL DEFAULT now(),\n    archived_at timestamp with time zone,\n    failure_category text,\n    replayable boolean DEFAULT false,\n    CONSTRAINT dead_letter_queue_pkey PRIMARY KEY (id)\\n);",
         "primary_key": [
           "id"
         ],
@@ -296,141 +315,6 @@
             "ref_schema": "app_push_notifications",
             "ref_columns": [
               "id"
-            ]
-          }
-        ],
-        "business_purpose": null,
-        "check_constraints": null,
-        "unique_constraints": null
-      },
-      {
-        "name": "delivery_logs",
-        "schema": "app_push_notifications",
-        "columns": [
-          {
-            "name": "id",
-            "type": "uuid",
-            "default": "gen_random_uuid()",
-            "nullable": false,
-            "is_identity": false
-          },
-          {
-            "name": "queue_id",
-            "type": "uuid",
-            "default": null,
-            "nullable": false,
-            "is_identity": false
-          },
-          {
-            "name": "device_id",
-            "type": "text",
-            "default": null,
-            "nullable": false,
-            "is_identity": false
-          },
-          {
-            "name": "fcm_token",
-            "type": "text",
-            "default": null,
-            "nullable": false,
-            "is_identity": false
-          },
-          {
-            "name": "error_message",
-            "type": "text",
-            "default": null,
-            "nullable": true,
-            "is_identity": false
-          },
-          {
-            "name": "response",
-            "type": "jsonb",
-            "default": null,
-            "nullable": true,
-            "is_identity": false
-          },
-          {
-            "name": "created_at",
-            "type": "timestamp with time zone",
-            "default": "now()",
-            "nullable": true,
-            "is_identity": false
-          },
-          {
-            "name": "status",
-            "type": "USER-DEFINED",
-            "default": null,
-            "nullable": false,
-            "is_identity": false
-          },
-          {
-            "name": "internal_user_id",
-            "type": "uuid",
-            "default": null,
-            "nullable": true,
-            "is_identity": false
-          },
-          {
-            "name": "provider_response_id",
-            "type": "text",
-            "default": null,
-            "nullable": true,
-            "is_identity": false
-          },
-          {
-            "name": "fcm_message_id",
-            "type": "text",
-            "default": null,
-            "nullable": true,
-            "is_identity": false
-          }
-        ],
-        "indexes": [
-          {
-            "name": "idx_delivery_logs_provider_id",
-            "unique": false,
-            "definition": "CREATE INDEX idx_delivery_logs_provider_id ON app_push_notifications.delivery_logs USING btree (provider_response_id)"
-          },
-          {
-            "name": "idx_delivery_logs_queue",
-            "unique": false,
-            "definition": "CREATE INDEX idx_delivery_logs_queue ON app_push_notifications.delivery_logs USING btree (queue_id)"
-          },
-          {
-            "name": "idx_delivery_logs_user",
-            "unique": false,
-            "definition": "CREATE INDEX idx_delivery_logs_user ON app_push_notifications.delivery_logs USING btree (internal_user_id)"
-          }
-        ],
-        "raw_sql": "CREATE TABLE app_push_notifications.delivery_logs (\\n    id uuid NOT NULL DEFAULT gen_random_uuid(),\n    queue_id uuid NOT NULL,\n    device_id text NOT NULL,\n    fcm_token text NOT NULL,\n    error_message text,\n    response jsonb,\n    created_at timestamp with time zone DEFAULT now(),\n    status USER-DEFINED NOT NULL,\n    internal_user_id uuid,\n    provider_response_id text,\n    fcm_message_id text,\n    CONSTRAINT delivery_logs_pkey PRIMARY KEY (id)\\n);",
-        "primary_key": [
-          "id"
-        ],
-        "foreign_keys": [
-          {
-            "name": "fk_delivery_logs_queue",
-            "columns": [
-              "queue_id"
-            ],
-            "on_delete": "CASCADE",
-            "on_update": "",
-            "ref_table": "push_queue",
-            "ref_schema": "app_push_notifications",
-            "ref_columns": [
-              "id"
-            ]
-          },
-          {
-            "name": "fk_delivery_logs_user",
-            "columns": [
-              "internal_user_id"
-            ],
-            "on_delete": "SET NULL",
-            "on_update": "",
-            "ref_table": "user_identity_root",
-            "ref_schema": "public",
-            "ref_columns": [
-              "internal_user_id"
             ]
           }
         ],
@@ -1194,6 +1078,11 @@
             "definition": "CREATE INDEX idx_push_queue_user_status ON app_push_notifications.push_queue USING btree (internal_user_id, status)"
           },
           {
+            "name": "idx_push_queue_worker",
+            "unique": false,
+            "definition": "CREATE INDEX idx_push_queue_worker ON app_push_notifications.push_queue USING btree (status, scheduled_at, id) WHERE (status = ANY (ARRAY['pending'::app_push_notifications.push_notification_status, 'processing'::app_push_notifications.push_notification_status]))"
+          },
+          {
             "name": "push_queue_idempotency_key_key",
             "unique": true,
             "definition": "CREATE UNIQUE INDEX push_queue_idempotency_key_key ON app_push_notifications.push_queue USING btree (idempotency_key)"
@@ -1222,7 +1111,7 @@
             "columns": [
               "event_key"
             ],
-            "on_delete": "",
+            "on_delete": "SET NULL",
             "on_update": "",
             "ref_table": "push_events",
             "ref_schema": "app_push_notifications",
@@ -1725,7 +1614,7 @@
       {
         "name": "evaluate_segment_filter",
         "schema": "app_push_notifications",
-        "source": "CREATE OR REPLACE FUNCTION app_push_notifications.evaluate_segment_filter(p_user_id uuid, p_filter jsonb)\n RETURNS boolean\n LANGUAGE plpgsql\n STABLE\nAS $function$\r\nDECLARE\r\n    v_platform TEXT;\r\n    v_country TEXT;\r\nBEGIN\r\n    -- Platform check (كما هو)\r\n    IF p_filter ? 'platform' THEN\r\n        v_platform := p_filter->>'platform';\r\n        IF NOT EXISTS (SELECT 1 FROM app_push_notifications.device_tokens dt \r\n                       WHERE dt.internal_user_id = p_user_id \r\n                         AND dt.token_status = 'active' \r\n                         AND dt.platform::text = v_platform) THEN\r\n            RETURN FALSE;\r\n        END IF;\r\n    END IF;\r\n    \r\n    -- Country check - باستخدام app_users.user_profile\r\n    IF p_filter ? 'country' THEN\r\n        v_country := p_filter->>'country';\r\n        IF NOT EXISTS (SELECT 1 FROM app_users.user_profile up \r\n                       WHERE up.internal_user_id = p_user_id \r\n                         AND up.country = v_country) THEN\r\n            RETURN FALSE;\r\n        END IF;\r\n    END IF;\r\n    \r\n    -- Score check – تم إلغاؤه مؤقتاً (يمكن إضافته لاحقاً إذا أضفت عمود score)\r\n    -- يمكنك إضافة عمود score إلى app_users.user_profile إذا أردت استخدامه.\r\n    \r\n    RETURN TRUE;\r\nEND;\r\n$function$\n",
+        "source": "CREATE OR REPLACE FUNCTION app_push_notifications.evaluate_segment_filter(p_user_id uuid, p_filter jsonb)\n RETURNS boolean\n LANGUAGE plpgsql\n STABLE\nAS $function$\r\nDECLARE\r\n    v_platform TEXT;\r\n    v_country TEXT;\r\n    v_min_score INT;\r\n    v_user_score INT;\r\n    v_key TEXT;\r\n    v_value JSONB;\r\nBEGIN\r\n    -- إذا كان `p_filter` يحتوي على `$or` أو `$and` معقد، يمكن معالجته لاحقاً\r\n    -- حاليًا نكتفي بالشروط البسيطة\r\n\r\n    -- Platform check\r\n    IF p_filter ? 'platform' THEN\r\n        v_platform := p_filter->>'platform';\r\n        IF NOT EXISTS (SELECT 1 FROM app_push_notifications.device_tokens dt \r\n                       WHERE dt.internal_user_id = p_user_id \r\n                         AND dt.token_status = 'active' \r\n                         AND dt.platform::text = v_platform) THEN\r\n            RETURN FALSE;\r\n        END IF;\r\n    END IF;\r\n    \r\n    -- Country check\r\n    IF p_filter ? 'country' THEN\r\n        v_country := p_filter->>'country';\r\n        IF NOT EXISTS (SELECT 1 FROM app_users.user_profile up \r\n                       WHERE up.internal_user_id = p_user_id \r\n                         AND up.country = v_country) THEN\r\n            RETURN FALSE;\r\n        END IF;\r\n    END IF;\r\n    \r\n    -- Score check (إذا كان العمود موجوداً)\r\n    IF p_filter ? 'min_score' THEN\r\n        v_min_score := (p_filter->>'min_score')::INT;\r\n        -- تأكد من وجود عمود score في user_profile\r\n        SELECT COALESCE(up.score, 0) INTO v_user_score \r\n        FROM app_users.user_profile up \r\n        WHERE up.internal_user_id = p_user_id;\r\n        IF v_user_score < v_min_score THEN\r\n            RETURN FALSE;\r\n        END IF;\r\n    END IF;\r\n\r\n    -- يمكن إضافة شروط أخرى هنا (مثل `last_active_days`) مستقبلاً\r\n    \r\n    RETURN TRUE;\r\nEND;\r\n$function$\n",
         "returns": "boolean",
         "language": "plpgsql",
         "arguments": [
@@ -1772,7 +1661,7 @@
       {
         "name": "move_to_dead_letter",
         "schema": "app_push_notifications",
-        "source": "CREATE OR REPLACE FUNCTION app_push_notifications.move_to_dead_letter(p_queue_id uuid, p_error_message text, p_error_code text)\n RETURNS void\n LANGUAGE plpgsql\nAS $function$\r\nDECLARE\r\n    v_queue app_push_notifications.push_queue%ROWTYPE;\r\nBEGIN\r\n    SELECT * INTO v_queue FROM app_push_notifications.push_queue WHERE id = p_queue_id;\r\n    IF NOT FOUND THEN\r\n        RETURN;\r\n    END IF;\r\n\r\n    INSERT INTO app_push_notifications.dead_letter_queue (\r\n        queue_id, event_key, internal_user_id, app_id, payload,\r\n        target_type, target_filters, final_status, error_message,\r\n        error_code, retry_count, archived_at\r\n    ) VALUES (\r\n        v_queue.id, v_queue.event_key, v_queue.internal_user_id, v_queue.app_id, v_queue.payload,\r\n        v_queue.target_type, v_queue.target_filters, 'failed',\r\n        p_error_message, p_error_code, v_queue.retry_count, now()\r\n    );\r\n\r\n    -- تحديث حالة الرسالة الأصلية إلى 'failed' حتى لا تتم معالجتها مرة أخرى\r\n    UPDATE app_push_notifications.push_queue\r\n    SET status = 'failed', sent_at = now()\r\n    WHERE id = p_queue_id;\r\nEND;\r\n$function$\n",
+        "source": "CREATE OR REPLACE FUNCTION app_push_notifications.move_to_dead_letter(p_queue_id uuid, p_error_message text, p_error_code text, p_failure_category text DEFAULT 'unknown'::text)\n RETURNS void\n LANGUAGE plpgsql\nAS $function$\r\nDECLARE\r\n    v_queue app_push_notifications.push_queue%ROWTYPE;\r\nBEGIN\r\n    SELECT * INTO v_queue FROM app_push_notifications.push_queue WHERE id = p_queue_id;\r\n    IF NOT FOUND THEN RETURN; END IF;\r\n\r\n    INSERT INTO app_push_notifications.dead_letter_queue (\r\n        queue_id, event_key, internal_user_id, app_id, payload,\r\n        target_type, target_filters, final_status, error_message,\r\n        error_code, retry_count, archived_at, failure_category,\r\n        replayable\r\n    ) VALUES (\r\n        v_queue.id, v_queue.event_key, v_queue.internal_user_id, v_queue.app_id, v_queue.payload,\r\n        v_queue.target_type, v_queue.target_filters, 'failed',\r\n        p_error_message, p_error_code, v_queue.retry_count, now(),\r\n        p_failure_category,\r\n        CASE WHEN p_failure_category IN ('invalid_token', 'rate_limited') THEN true ELSE false END\r\n    );\r\n\r\n    UPDATE app_push_notifications.push_queue\r\n    SET status = 'failed', sent_at = now()\r\n    WHERE id = p_queue_id;\r\nEND;\r\n$function$\n",
         "returns": "void",
         "language": "plpgsql",
         "arguments": [
@@ -1787,13 +1676,30 @@
           {
             "name": "p_error_code",
             "type": "text"
+          },
+          {
+            "name": "p_failure_category",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "name": "requeue_from_dead_letter",
+        "schema": "app_push_notifications",
+        "source": "CREATE OR REPLACE FUNCTION app_push_notifications.requeue_from_dead_letter(p_dlq_id uuid)\n RETURNS uuid\n LANGUAGE plpgsql\nAS $function$\r\nDECLARE\r\n    v_dlq RECORD;\r\n    v_new_queue_id UUID;\r\nBEGIN\r\n    SELECT * INTO v_dlq FROM app_push_notifications.dead_letter_queue WHERE id = p_dlq_id AND replayable = true;\r\n    IF NOT FOUND THEN\r\n        RAISE EXCEPTION 'Dead letter record not found or not replayable';\r\n    END IF;\r\n\r\n    -- إعادة إنشاء الإشعار في push_queue\r\n    INSERT INTO app_push_notifications.push_queue (\r\n        event_key, internal_user_id, app_id, payload, target_type, target_filters, idempotency_key, status, retry_count, scheduled_at\r\n    ) VALUES (\r\n        v_dlq.event_key, v_dlq.internal_user_id, v_dlq.app_id, v_dlq.payload, v_dlq.target_type, v_dlq.target_filters, \r\n        gen_random_uuid()::text, 'pending', 0, now()\r\n    ) RETURNING id INTO v_new_queue_id;\r\n\r\n    -- تحديث حالة DLQ إلى resolved\r\n    UPDATE app_push_notifications.dead_letter_queue\r\n    SET final_status = 'resolved', archived_at = now()\r\n    WHERE id = p_dlq_id;\r\n\r\n    RETURN v_new_queue_id;\r\nEND;\r\n$function$\n",
+        "returns": "uuid",
+        "language": "plpgsql",
+        "arguments": [
+          {
+            "name": "p_dlq_id",
+            "type": "uuid"
           }
         ]
       },
       {
         "name": "save_push_event_version",
         "schema": "app_push_notifications",
-        "source": "CREATE OR REPLACE FUNCTION app_push_notifications.save_push_event_version()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    IF (OLD.title IS DISTINCT FROM NEW.title) OR\r\n       (OLD.body IS DISTINCT FROM NEW.body) OR\r\n       (OLD.category IS DISTINCT FROM NEW.category) OR\r\n       (OLD.priority IS DISTINCT FROM NEW.priority) OR\r\n       (OLD.default_data IS DISTINCT FROM NEW.default_data) OR\r\n       (OLD.is_active IS DISTINCT FROM NEW.is_active) THEN\r\n        INSERT INTO app_push_notifications.push_event_versions \r\n            (event_key, version, title, body, category, priority, default_data, is_active, created_by)\r\n        VALUES (OLD.event_key, OLD.version, OLD.title, OLD.body, OLD.category, OLD.priority, OLD.default_data, OLD.is_active, 'auto_version');\r\n        -- زيادة الإصدار في جدول push_events بشكل آمن\r\n        UPDATE app_push_notifications.push_events \r\n        SET version = version + 1 \r\n        WHERE id = OLD.id;\r\n        -- نقوم بإلغاء التحديث الأصلي (لأننا قمنا بتحديث الإصدار يدوياً)\r\n        RETURN NULL;\r\n    END IF;\r\n    RETURN NEW;\r\nEND;\r\n$function$\n",
+        "source": "CREATE OR REPLACE FUNCTION app_push_notifications.save_push_event_version()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    IF (OLD.title IS DISTINCT FROM NEW.title) OR\r\n       (OLD.body IS DISTINCT FROM NEW.body) OR\r\n       (OLD.category IS DISTINCT FROM NEW.category) OR\r\n       (OLD.priority IS DISTINCT FROM NEW.priority) OR\r\n       (OLD.default_data IS DISTINCT FROM NEW.default_data) OR\r\n       (OLD.is_active IS DISTINCT FROM NEW.is_active) THEN\r\n        -- حفظ النسخة القديمة\r\n        INSERT INTO app_push_notifications.push_event_versions \r\n            (event_key, version, title, body, category, priority, default_data, is_active, created_by)\r\n        VALUES (OLD.event_key, OLD.version, OLD.title, OLD.body, OLD.category, OLD.priority, OLD.default_data, OLD.is_active, 'auto_version');\r\n        -- زيادة الإصدار في الصف الجديد\r\n        NEW.version := OLD.version + 1;\r\n    END IF;\r\n    RETURN NEW;  -- السماح بإتمام التحديث الأصلي\r\nEND;\r\n$function$\n",
         "returns": "trigger",
         "language": "plpgsql",
         "arguments": null
@@ -1920,19 +1826,6 @@
     "object_type": "policies",
     "sort_order": 6,
     "data": [
-      {
-        "name": "p_deny_all_rpc_only_delivery_logs",
-        "roles": [
-          "authenticated",
-          "anon"
-        ],
-        "table": "delivery_logs",
-        "using": "false",
-        "schema": "app_push_notifications",
-        "raw_sql": "CREATE POLICY p_deny_all_rpc_only_delivery_logs ON app_push_notifications.delivery_logs AS ALL TO authenticated,anon USING (false) WITH CHECK (false);",
-        "operation": "ALL",
-        "with_check": "false"
-      },
       {
         "name": "p_deny_all_rpc_only_device_tokens",
         "roles": [
